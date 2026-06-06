@@ -140,6 +140,17 @@ export default function HomePage() {
     try { await fetch(`/api/tasks?id=${id}`, { method: "DELETE" }); setLiveTasks(prev => prev.filter(t => t.id !== id)); } catch {}
   };
 
+  const handlePolish = async () => {
+    if (!prompt.trim()) { alert("请先输入内容"); return; }
+    setStatusText("AI 润色中..."); setLoading(true);
+    try {
+      const res = await fetch("/api/polish", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: prompt }) });
+      const data = await res.json();
+      if (data.success) setPrompt(data.data.text); else alert(data.error || "润色失败");
+    } catch { alert("润色出错"); }
+    finally { setLoading(false); setStatusText(""); }
+  };
+
   const tabs = [
     { key: "keywords", label: "关键词组合" },
     { key: "manual", label: "手动输入" },
@@ -201,9 +212,19 @@ export default function HomePage() {
               <h2 className="text-base sm:text-lg font-semibold text-app-text">视频生成</h2>
               <ImageUploader image={refImage} onChange={setRefImage} />
               <p className="text-xs text-app-text3">{refImage ? "图生视频：上传起始帧 + 描述画面动作" : "文生视频：输入画面描述即可"}</p>
-              <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3}
-                className="w-full px-3 py-2.5 bg-app-bg border border-app-border rounded-xl text-sm text-app-text leading-relaxed resize-y focus:outline-none"
-                placeholder="描述视频画面，如：一位古风美女在樱花树下转身回眸，微风吹动发丝，电影感运镜..." />
+              <div className="relative">
+                <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3}
+                  className="w-full px-3 py-2.5 pr-20 bg-app-bg border border-app-border rounded-xl text-sm text-app-text leading-relaxed resize-y focus:outline-none"
+                  placeholder="描述视频画面，如：一位古风美女在樱花树下转身回眸，微风吹动发丝，电影感运镜..." />
+                <button
+                  onClick={handlePolish}
+                  disabled={loading || !prompt.trim()}
+                  className="absolute bottom-2 right-2 px-3 py-1 text-xs rounded-lg transition text-white"
+                  style={{ background: loading || !prompt.trim() ? "var(--bg-tertiary)" : "var(--accent)", color: loading || !prompt.trim() ? "var(--text-muted)" : "#fff" }}
+                >
+                  {loading && statusText === "AI 润色中..." ? "..." : "AI 润色"}
+                </button>
+              </div>
             </div>
           )}
 
@@ -223,9 +244,19 @@ export default function HomePage() {
                 </label>
                 <span className="text-xs text-app-text3">{prompt.length} 字符</span>
               </div>
-              <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={4}
-                className="w-full px-3 py-2.5 bg-app-bg border border-app-border rounded-xl text-sm text-app-text leading-relaxed resize-y focus:outline-none"
-                placeholder="在此输入或编辑提示词..." />
+              <div className="relative">
+                <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={4}
+                  className="w-full px-3 py-2.5 pr-20 bg-app-bg border border-app-border rounded-xl text-sm text-app-text leading-relaxed resize-y focus:outline-none"
+                  placeholder="在此输入或编辑提示词..." />
+                <button
+                  onClick={handlePolish}
+                  disabled={loading || !prompt.trim()}
+                  className="absolute bottom-2 right-2 px-3 py-1 text-xs rounded-lg transition text-white"
+                  style={{ background: loading || !prompt.trim() ? "var(--bg-tertiary)" : "var(--accent)", color: loading || !prompt.trim() ? "var(--text-muted)" : "#fff" }}
+                >
+                  {loading && statusText === "AI 润色中..." ? "..." : "AI 润色"}
+                </button>
+              </div>
             </div>
           )}
 
