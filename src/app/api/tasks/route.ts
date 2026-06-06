@@ -171,12 +171,13 @@ async function processVideoTask(taskId: number) {
       if (!statusRes.ok) continue;
       const statusData = await statusRes.json();
 
-      if (statusData.completed_at !== null && statusData.completed_at !== undefined && statusData.video_url) {
+      const videoUrl = statusData.video_url || statusData.remixed_from_video_id || statusData.url;
+      if ((statusData.status === "completed" || (statusData.completed_at !== null && statusData.completed_at !== undefined)) && videoUrl) {
         const publicDir = path.join(process.cwd(), "public", "videos", "generated");
         if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
         const filename = `${uuidv4()}.mp4`;
         const savePath = path.join(publicDir, filename);
-        await downloadFile(statusData.video_url, savePath);
+        await downloadFile(videoUrl, savePath);
         const videoPath = `/videos/generated/${filename}`;
 
         db.update(tasks).set({ status: "done", videoPath, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
