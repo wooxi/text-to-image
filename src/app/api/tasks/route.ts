@@ -184,7 +184,18 @@ async function processVideoTask(taskId: number, width: number, height: number, n
     };
 
     if (task.referenceImage) {
-      reqBody.image = task.referenceImage;
+      const isBase64 = task.referenceImage.startsWith("data:");
+      if (isBase64) {
+        const publicDir = path.join(process.cwd(), "public", "images", "generated");
+        if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+        const refFilename = `ref_${uuidv4()}.png`;
+        const refPath = path.join(publicDir, refFilename);
+        const base64Data = task.referenceImage.split(",")[1];
+        fs.writeFileSync(refPath, Buffer.from(base64Data, "base64"));
+        reqBody.image = `data:image/png;base64,${base64Data}`;
+      } else {
+        reqBody.image = task.referenceImage;
+      }
     }
 
     const createRes = await fetch(`${baseUrl}/v1/videos`, {
@@ -224,8 +235,9 @@ async function processVideoTask(taskId: number, width: number, height: number, n
         db.update(tasks).set({ status: "done", videoPath, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
         return;
       }
-      if (statusData.status === "failed" || statusData.error) {
-        throw new Error("视频生成失败: " + (statusData.error || "未知错误"));
+      if (statusData.status === "failed" || (statusData.error && statusData.error !== null)) {
+        const errDetail = typeof statusData.error === "object" ? JSON.stringify(statusData.error) : String(statusData.error || "");
+        throw new Error("视频生成失败: " + errDetail);
       }
       db.update(tasks).set({ updatedAt: now() }).where(eq(tasks.id, taskId)).run();
     }
