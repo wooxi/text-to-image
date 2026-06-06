@@ -129,14 +129,18 @@ async function processVideoTask(taskId: number) {
 
     const imgEndpoint = getConfig("image_endpoint") || "https://apihub.agnes-ai.com/v1";
     const apiKey = getConfig("image_api_key");
-    const baseUrl = imgEndpoint.replace(/\/v1\/?$/, "").replace(/\/+$/, "");
+    const videoApiKey = getConfig("video_api_key") || apiKey;
+    const videoEndpoint = getConfig("video_endpoint") || "https://apihub.agnes-ai.com";
+    const videoModel = getConfig("video_model") || "agnes-video-v2.0";
+    const baseUrl = videoEndpoint.replace(/\/+$/, "");
+    const key = videoApiKey;
 
-    if (!apiKey) throw new Error("请先配置 API Key");
+    if (!key) throw new Error("请先配置视频 API Key");
 
     const prompt = task.prompt || task.keywordNames;
 
     const reqBody: Record<string, unknown> = {
-      model: "agnes-video-v2.0",
+      model: videoModel,
       prompt,
       height: 768,
       width: 1152,
@@ -150,7 +154,7 @@ async function processVideoTask(taskId: number) {
 
     const createRes = await fetch(`${baseUrl}/v1/videos`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
       body: JSON.stringify(reqBody),
     });
     if (!createRes.ok) throw new Error(`视频创建失败: ${await createRes.text()}`);
@@ -162,7 +166,7 @@ async function processVideoTask(taskId: number) {
     for (let i = 0; i < 120; i++) {
       await new Promise((r) => setTimeout(r, 5000));
       const statusRes = await fetch(`${baseUrl}/agnesapi?video_id=${videoId}`, {
-        headers: { Authorization: `Bearer ${apiKey}` },
+        headers: { Authorization: `Bearer ${key}` },
       });
       if (!statusRes.ok) continue;
       const statusData = await statusRes.json();

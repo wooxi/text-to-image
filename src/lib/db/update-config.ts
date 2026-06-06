@@ -6,11 +6,14 @@ const sqlite = new Database(path.join(process.cwd(), "data", "text-to-image.db")
 const configs: Record<string, string> = {
   llm_endpoint: "http://192.168.100.4:8030/v1",
   llm_api_key: "sk-xxbtN694lmzolOd4gPGLoREzYrwLroLxzhjZ3oD0wJ8D1C75",
-  llm_model: "deepseek-v4-pro",
+  llm_model: "deepseek-v4-flash",
   image_endpoint: "https://apihub.agnes-ai.com/v1",
   image_api_key: "sk-QpPm6eIJkKBo8jgXsLbrO70XSWbhMCuCLK7fhDapuA7w6jJN",
   image_model: "agnes-image-2.1-flash",
   image_size: "1024x1024",
+  video_endpoint: "https://apihub.agnes-ai.com",
+  video_api_key: "sk-QpPm6eIJkKBo8jgXsLbrO70XSWbhMCuCLK7fhDapuA7w6jJN",
+  video_model: "agnes-video-v2.0",
 };
 
 const upsert = sqlite.prepare(
