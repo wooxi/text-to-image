@@ -120,7 +120,7 @@ ${isImg2img ? "5. 对于图片编辑，明确描述要修改什么、保留什�
   }
 }
 
-async function processVideoTask(taskId: number) {
+async function processVideoTask(taskId: number, width: number, height: number, numFrames: number, fps: number) {
   const now = () => new Date().toISOString();
   try {
     const task = db.select().from(tasks).where(eq(tasks.id, taskId)).get();
@@ -137,15 +137,50 @@ async function processVideoTask(taskId: number) {
 
     if (!key) throw new Error("请先配置视频 API Key");
 
-    const prompt = task.prompt || task.keywordNames;
+    let prompt = task.prompt || task.keywordNames;
+
+    // Generate video-optimized prompt if using keywords (no manual prompt)
+    if (!task.prompt && task.keywordNames) {
+      const llmEndpoint = getConfig("llm_endpoint") || "https://api.openai.com/v1";
+      const llmApiKey = getConfig("llm_api_key");
+      const llmModel = getConfig("llm_model") || "gpt-4o";
+      if (llmApiKey) {
+        const videoSystemPrompt = `你是一位专业的 AI 视频提示词工程师。用户会提供关键词或简短描述，请生成一条适合视频生成的英文提示词。
+
+与图片不同，视频提示词应关注：
+1. 动作与运动：描述主体的具体动作、运动轨迹、速度
+2. 镜头语言：推拉摇移、跟拍、特写转全景等运镜方式
+3. 时间感：动作的节奏、持续时间、变化过程
+4. 场景动态：风吹、水流、光影变化等环境动态
+5. 氛围与情绪：通过动作和镜头传递的情感
+
+规则：
+- 用英文输出
+- 长度 80-200 词
+- 不要包含人体结构要求（那是图片专用的）
+- 只输出提示词本身`;
+
+        const promptUrl = llmEndpoint.replace(/\/+$/, "") + "/chat/completions";
+        const promptRes = await fetch(promptUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${llmApiKey}` },
+          body: JSON.stringify({ model: llmModel, messages: [{ role: "system", content: videoSystemPrompt }, { role: "user", content: `根据以下内容生成视频提示词：${task.keywordNames}` }], temperature: 0.8, max_tokens: 1024, thinking: { type: "disabled" } }),
+        });
+        if (promptRes.ok) {
+          const promptData = await promptRes.json();
+          const gp = promptData.choices?.[0]?.message?.content?.trim();
+          if (gp) { prompt = gp; db.update(tasks).set({ prompt: gp, updatedAt: now() }).where(eq(tasks.id, taskId)).run(); }
+        }
+      }
+    }
 
     const reqBody: Record<string, unknown> = {
       model: videoModel,
       prompt,
-      height: 768,
-      width: 1152,
-      num_frames: 121,
-      frame_rate: 24,
+      height,
+      width,
+      num_frames: numFrames,
+      frame_rate: fps,
     };
 
     if (task.referenceImage) {
@@ -197,7 +232,7 @@ async function processVideoTask(taskId: number) {
 export async function POST(request: Request) {
   try {
     await requireAuth();
-    const { keywords, size, type, image, prompt: manualPrompt } = await request.json();
+    const { keywords, size, type, image, prompt: manualPrompt, width, height, num_frames, frame_rate } = await request.json();
     if (!keywords && !manualPrompt) {
       return NextResponse.json({ success: false, error: "缺少关键词或提示词" }, { status: 400 });
     }
@@ -213,7 +248,7 @@ export async function POST(request: Request) {
     }).returning().get();
 
     if (taskType === "video") {
-      processVideoTask(task.id);
+      processVideoTask(task.id, width || 1152, height || 768, num_frames || 121, frame_rate || 24);
     } else {
       processImageTask(task.id, taskType === "img2img");
     }

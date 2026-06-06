@@ -45,6 +45,10 @@ export default function HomePage() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [mode, setMode] = useState<"keywords" | "manual" | "img2img" | "video">("keywords");
   const [refImage, setRefImage] = useState("");
+  const [videoWidth, setVideoWidth] = useState(1152);
+  const [videoHeight, setVideoHeight] = useState(768);
+  const [videoFrames, setVideoFrames] = useState(121);
+  const [videoFps, setVideoFps] = useState(24);
   const [liveTasks, setLiveTasks] = useState<TaskRecord[]>([]);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -105,6 +109,13 @@ export default function HomePage() {
     if (!loggedIn) { alert("请先登录"); return; }
 
     const body: Record<string, unknown> = { type: mode, size: "1024x1024" };
+
+    if (mode === "video") {
+      body.width = videoWidth;
+      body.height = videoHeight;
+      body.num_frames = videoFrames;
+      body.frame_rate = videoFps;
+    }
 
     if (mode === "keywords" || mode === "img2img") {
       if (mode === "keywords" && selected.length === 0) { alert("请至少选择一个关键词"); return; }
@@ -211,20 +222,52 @@ export default function HomePage() {
             <div className="space-y-3">
               <h2 className="text-base sm:text-lg font-semibold text-app-text">视频生成</h2>
               <ImageUploader image={refImage} onChange={setRefImage} />
-              <p className="text-xs text-app-text3">{refImage ? "图生视频：上传起始帧 + 描述画面动作" : "文生视频：输入画面描述即可"}</p>
+              <p className="text-xs text-app-text3">{refImage ? "图生视频：上传起始帧 + 描述画面动作" : "文生视频：输入画面动作描述即可"}</p>
+
               <div className="relative">
                 <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3}
                   className="w-full px-3 py-2.5 pr-20 bg-app-bg border border-app-border rounded-xl text-sm text-app-text leading-relaxed resize-y focus:outline-none"
-                  placeholder="描述视频画面，如：一位古风美女在樱花树下转身回眸，微风吹动发丝，电影感运镜..." />
-                <button
-                  onClick={handlePolish}
-                  disabled={loading || !prompt.trim()}
+                  placeholder="描述视频画面动作，如：一位古风美女在樱花树下转身回眸，微风吹动发丝和裙摆，镜头从侧面缓缓推近，电影感运镜..." />
+                <button onClick={handlePolish} disabled={loading || !prompt.trim()}
                   className="absolute bottom-2 right-2 px-3 py-1 text-xs rounded-lg transition text-white"
-                  style={{ background: loading || !prompt.trim() ? "var(--bg-tertiary)" : "var(--accent)", color: loading || !prompt.trim() ? "var(--text-muted)" : "#fff" }}
-                >
+                  style={{ background: loading || !prompt.trim() ? "var(--bg-tertiary)" : "var(--accent)", color: loading || !prompt.trim() ? "var(--text-muted)" : "#fff" }}>
                   {loading && statusText === "AI 润色中..." ? "..." : "AI 润色"}
                 </button>
               </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div>
+                  <label className="text-xs text-app-text3">宽度</label>
+                  <select value={videoWidth} onChange={e => setVideoWidth(Number(e.target.value))}
+                    className="w-full mt-1 px-2 py-1.5 bg-app-bg border border-app-border rounded-lg text-xs text-app-text focus:outline-none">
+                    <option value={576}>576</option><option value={768}>768</option><option value={1152}>1152</option><option value={1280}>1280</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-app-text3">高度</label>
+                  <select value={videoHeight} onChange={e => setVideoHeight(Number(e.target.value))}
+                    className="w-full mt-1 px-2 py-1.5 bg-app-bg border border-app-border rounded-lg text-xs text-app-text focus:outline-none">
+                    <option value={576}>576</option><option value={768}>768</option><option value={1152}>1152</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-app-text3">帧数 <span className="opacity-50">(8n+1)</span></label>
+                  <select value={videoFrames} onChange={e => setVideoFrames(Number(e.target.value))}
+                    className="w-full mt-1 px-2 py-1.5 bg-app-bg border border-app-border rounded-lg text-xs text-app-text focus:outline-none">
+                    <option value={81}>81 (3.4s)</option><option value={121}>121 (5s)</option><option value={201}>201 (8.4s)</option><option value={401}>401 (16.7s)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-app-text3">帧率</label>
+                  <select value={videoFps} onChange={e => setVideoFps(Number(e.target.value))}
+                    className="w-full mt-1 px-2 py-1.5 bg-app-bg border border-app-border rounded-lg text-xs text-app-text focus:outline-none">
+                    <option value={8}>8 fps</option><option value={16}>16 fps</option><option value={24}>24 fps</option><option value={30}>30 fps</option>
+                  </select>
+                </div>
+              </div>
+              <p className="text-xs text-app-text3">
+                分辨率: {videoWidth}x{videoHeight} · {videoFrames}帧/{videoFps}fps ≈ {(videoFrames/videoFps).toFixed(1)}秒
+              </p>
             </div>
           )}
 
