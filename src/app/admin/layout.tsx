@@ -7,27 +7,22 @@ import { useRouter, usePathname } from "next/navigation";
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [username, setUsername] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (pathname === "/admin/login") {
-      setAuthed(true);
-      return;
-    }
+    if (pathname === "/admin/login") { setAuthed(true); return; }
     fetch("/api/config")
       .then((r) => r.json())
       .then((data) => {
-        if (data.success !== undefined) {
-          setAuthed(true);
-          const stored = sessionStorage.getItem("admin_user");
-          if (stored) setUsername(stored);
-        } else {
-          setAuthed(false);
-        }
+        if (data.success !== undefined) { setAuthed(true); const s = sessionStorage.getItem("admin_user"); if (s) setUsername(s); }
+        else setAuthed(false);
       })
       .catch(() => setAuthed(false));
   }, [pathname]);
+
+  useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -35,22 +30,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push("/admin/login");
   };
 
-  if (authed === null) {
-    return (
-      <div className="min-h-screen bg-app-bg flex items-center justify-center">
-        <p className="text-app-text3">加载中...</p>
-      </div>
-    );
-  }
+  if (authed === null) return (
+    <div className="min-h-screen bg-app-bg flex items-center justify-center"><p className="text-app-text3">加载中...</p></div>
+  );
 
-  if (authed === false) {
-    router.push("/admin/login");
-    return null;
-  }
-
-  if (pathname === "/admin/login") {
-    return <>{children}</>;
-  }
+  if (authed === false) { router.push("/admin/login"); return null; }
+  if (pathname === "/admin/login") return <>{children}</>;
 
   const navItems = [
     { href: "/admin", label: "概览" },
@@ -59,43 +44,57 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/history", label: "生成历史" },
   ];
 
+  const sidebar = (
+    <>
+      <div className="p-4 border-b" style={{ borderColor: "var(--border)" }}>
+        <Link href="/" className="text-lg font-bold text-app-text">AI 文生图</Link>
+        <p className="text-xs text-app-text3 mt-1">后台管理</p>
+      </div>
+      <nav className="flex-1 p-3 space-y-1">
+        {navItems.map((item) => (
+          <Link key={item.href} href={item.href} className="block px-3 py-2 rounded-lg text-sm transition"
+            style={{ background: pathname === item.href ? "var(--accent)" : "transparent", color: pathname === item.href ? "#fff" : "var(--text-secondary)" }}>
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+      <div className="p-3 border-t" style={{ borderColor: "var(--border)" }}>
+        <p className="text-xs text-app-text3 mb-2">{username}</p>
+        <button onClick={handleLogout} className="w-full text-xs px-3 py-1.5 rounded transition"
+          style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)" }}>退出登录</button>
+      </div>
+    </>
+  );
+
   return (
-    <div className="min-h-screen bg-app-bg flex">
-      <aside
-        className="w-56 border-r flex flex-col"
-        style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
-      >
-        <div className="p-4 border-b" style={{ borderColor: "var(--border)" }}>
-          <Link href="/" className="text-lg font-bold text-app-text">AI 文生图</Link>
-          <p className="text-xs text-app-text3 mt-1">后台管理</p>
-        </div>
-        <nav className="flex-1 p-3 space-y-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="block px-3 py-2 rounded-lg text-sm transition"
-              style={{
-                background: pathname === item.href ? "var(--accent)" : "transparent",
-                color: pathname === item.href ? "#fff" : "var(--text-secondary)",
-              }}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="p-3 border-t" style={{ borderColor: "var(--border)" }}>
-          <p className="text-xs text-app-text3 mb-2">{username}</p>
-          <button
-            onClick={handleLogout}
-            className="w-full text-xs px-3 py-1.5 rounded transition"
-            style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)" }}
-          >
-            退出登录
-          </button>
-        </div>
-      </aside>
-      <main className="flex-1 p-6 overflow-auto">{children}</main>
+    <div className="min-h-screen bg-app-bg">
+      {/* Mobile top bar */}
+      <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-app-text p-1">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </button>
+        <span className="text-sm font-medium text-app-text">AI 文生图 · 后台</span>
+        <span className="text-xs text-app-text3">{username}</span>
+      </div>
+
+      <div className="flex">
+        {/* Desktop sidebar */}
+        <aside className="hidden lg:flex w-56 flex-col border-r" style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", minHeight: "calc(100vh - 0px)" }}>
+          {sidebar}
+        </aside>
+
+        {/* Mobile sidebar overlay */}
+        {sidebarOpen && (
+          <div className="lg:hidden fixed inset-0 z-40 flex">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
+            <aside className="relative w-64 flex flex-col z-50" style={{ background: "var(--bg-secondary)" }}>
+              {sidebar}
+            </aside>
+          </div>
+        )}
+
+        <main className="flex-1 p-4 sm:p-6 overflow-auto min-h-screen">{children}</main>
+      </div>
     </div>
   );
 }

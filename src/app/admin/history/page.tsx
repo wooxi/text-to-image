@@ -47,12 +47,12 @@ export default function HistoryPage() {
         {records.map((record) => (
           <div
             key={record.id}
-            className="bg-app-bg2 border border-app-border rounded-xl overflow-hidden flex"
+            className="bg-app-bg2 border border-app-border rounded-xl overflow-hidden flex flex-col sm:flex-row"
           >
             <img
               src={record.imagePath}
               alt={record.prompt}
-              className="w-32 h-32 object-cover flex-shrink-0"
+              className="w-full sm:w-32 h-32 object-cover flex-shrink-0"
             />
             <div className="p-3 flex-1 min-w-0">
               <p className="text-xs text-app-text3 mb-1">

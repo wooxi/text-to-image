@@ -32,7 +32,7 @@ export default function AdminDashboard() {
   return (
     <div>
       <h1 className="text-xl font-bold text-app-text mb-6">管理概览</h1>
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {[
           { label: "关键词组", value: stats.groups },
           { label: "关键词总数", value: stats.keywords },
@@ -42,7 +42,7 @@ export default function AdminDashboard() {
             key={item.label}
             className="bg-app-bg2 border border-app-border rounded-xl p-4"
           >
-            <p className="text-3xl font-bold" style={statStyle(item.value)}>
+            <p className="text-xl sm:text-3xl font-bold" style={statStyle(item.value)}>
               {item.value}
             </p>
             <p className="text-sm text-app-text3 mt-1">{item.label}</p>
@@ -50,7 +50,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <Link
           href="/admin/keywords"
           className="bg-app-bg2 border border-app-border rounded-xl p-4 hover:border-app-border-hover transition"
