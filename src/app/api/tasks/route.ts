@@ -171,7 +171,7 @@ async function processVideoTask(taskId: number) {
       if (!statusRes.ok) continue;
       const statusData = await statusRes.json();
 
-      if (statusData.status === "completed" && statusData.video_url) {
+      if (statusData.completed_at !== null && statusData.completed_at !== undefined && statusData.video_url) {
         const publicDir = path.join(process.cwd(), "public", "videos", "generated");
         if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
         const filename = `${uuidv4()}.mp4`;
@@ -182,7 +182,7 @@ async function processVideoTask(taskId: number) {
         db.update(tasks).set({ status: "done", videoPath, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
         return;
       }
-      if (statusData.status === "failed") {
+      if (statusData.status === "failed" || statusData.error) {
         throw new Error("视频生成失败: " + (statusData.error || "未知错误"));
       }
       db.update(tasks).set({ updatedAt: now() }).where(eq(tasks.id, taskId)).run();
