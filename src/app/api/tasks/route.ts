@@ -4,11 +4,20 @@ import { db } from "@/lib/db";
 import { config, tasks, imageHistory } from "@/lib/db/schema";
 import { eq, desc, or } from "drizzle-orm";
 
-// 启动时清理孤儿任务（上次被杀掉的 processing 任务）
-db.update(tasks)
-  .set({ status: "failed", error: "服务重启，任务中断，请重试" })
-  .where(eq(tasks.status, "processing"))
-  .run();
+// 启动时清理孤儿任务（仅执行一次）
+let cleaned = false;
+function cleanupOrphanTasks() {
+  if (cleaned) return;
+  cleaned = true;
+  try {
+    const result = db.update(tasks)
+      .set({ status: "failed", error: "服务重启，任务中断，请重试" })
+      .where(eq(tasks.status, "processing"))
+      .run();
+    if (result.changes > 0) console.log(`[cleanup] 已清理 ${result.changes} 个孤儿视频任务`);
+  } catch {}
+}
+cleanupOrphanTasks();
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import path from "path";
