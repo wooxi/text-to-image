@@ -75,16 +75,22 @@ export default function HomePage() {
 
   const startPolling = useCallback(() => {
     if (pollingRef.current) return;
+    let emptyCount = 0;
     pollingRef.current = setInterval(async () => {
       try {
         const res = await fetch("/api/tasks?status=pending,processing");
         const data = await res.json();
         if (data.success) {
           setLiveTasks(data.data);
-          if (data.data.length === 0 && pollingRef.current) {
-            clearInterval(pollingRef.current);
-            pollingRef.current = null;
-            fetchHistory();
+          if (data.data.length === 0) {
+            emptyCount++;
+            if (emptyCount >= 3 && pollingRef.current) {
+              clearInterval(pollingRef.current);
+              pollingRef.current = null;
+              fetchHistory();
+            }
+          } else {
+            emptyCount = 0;
           }
         }
       } catch {}

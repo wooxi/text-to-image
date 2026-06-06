@@ -100,13 +100,14 @@ async function processTask(taskId: number) {
     }
 
     const imagePath = `/images/generated/${filename}`;
-    db.update(tasks).set({ status: "done", imagePath, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
 
     db.insert(imageHistory).values({
       keywordNames: task.keywordNames,
       prompt: generatedPrompt,
       imagePath,
     }).run();
+
+    db.update(tasks).set({ status: "done", imagePath, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
   } catch (e) {
     const errMsg = (e as Error).message;
     db.update(tasks).set({ status: "failed", error: errMsg, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
