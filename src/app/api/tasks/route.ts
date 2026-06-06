@@ -209,7 +209,7 @@ async function processVideoTask(taskId: number, width: number, height: number, n
 
     db.update(tasks).set({ videoId, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
 
-    for (let i = 0; i < 120; i++) {
+    for (let i = 0; i < 360; i++) {
       await new Promise((r) => setTimeout(r, 5000));
       const statusRes = await fetch(`${baseUrl}/agnesapi?video_id=${videoId}`, {
         headers: { Authorization: `Bearer ${key}` },
@@ -241,7 +241,7 @@ async function processVideoTask(taskId: number, width: number, height: number, n
       }
       db.update(tasks).set({ updatedAt: now() }).where(eq(tasks.id, taskId)).run();
     }
-    throw new Error("视频生成超时（10分钟）");
+    throw new Error("视频生成超时（30分钟）");
   } catch (e) {
     db.update(tasks).set({ status: "failed", error: (e as Error).message, updatedAt: new Date().toISOString() }).where(eq(tasks.id, taskId)).run();
   }
