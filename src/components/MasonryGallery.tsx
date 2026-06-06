@@ -5,12 +5,9 @@ import ImageCard from "./ImageCard";
 import TaskCard from "./TaskCard";
 
 interface TaskRecord {
-  id: number;
-  status: string;
-  keywordNames: string;
-  prompt: string;
-  imagePath: string;
-  error: string;
+  id: number; status: string; type: string;
+  keywordNames: string; prompt: string;
+  imagePath: string; videoPath: string; error: string;
 }
 
 interface Props {
@@ -25,7 +22,7 @@ export default function MasonryGallery({ records, liveTasks, onDelete, onDeleteT
     return (
       <div className="text-center py-16 sm:py-20" style={{ color: "var(--text-muted)" }}>
         <p className="text-sm sm:text-base">暂无生成的图片</p>
-        <p className="text-xs mt-1 opacity-60">选择关键词后生成提示词，再点击生成图片即可开始</p>
+        <p className="text-xs mt-1 opacity-60">选择关键词生成提示词，再点击生成图片即可开始</p>
       </div>
     );
   }

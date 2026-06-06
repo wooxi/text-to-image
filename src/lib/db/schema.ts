@@ -39,9 +39,13 @@ export const imageHistory = sqliteTable("image_history", {
 export const tasks = sqliteTable("tasks", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   status: text("status").notNull().default("pending"),
+  type: text("type").notNull().default("image"),
   keywordNames: text("keyword_names").notNull().default(""),
   prompt: text("prompt").notNull().default(""),
   imagePath: text("image_path").notNull().default(""),
+  referenceImage: text("reference_image").notNull().default(""),
+  videoPath: text("video_path").notNull().default(""),
+  videoId: text("video_id").notNull().default(""),
   size: text("size").notNull().default("1024x1024"),
   error: text("error").notNull().default(""),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
