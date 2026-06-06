@@ -61,8 +61,18 @@ async function processTask(taskId: number) {
     });
     if (!promptRes.ok) throw new Error(`LLM 错误: ${await promptRes.text()}`);
     const promptData = await promptRes.json();
-    const generatedPrompt = promptData.choices?.[0]?.message?.content?.trim();
-    if (!generatedPrompt) throw new Error("生成提示词失败");
+    const msg = promptData.choices?.[0]?.message;
+    let generatedPrompt = msg?.content?.trim() || "";
+    if (!generatedPrompt && msg?.reasoning_content) {
+      const reasoning = msg.reasoning_content.trim();
+      const cleanPrompt = reasoning
+        .replace(/^[\s\S]*?(?:prompt|提示词|here is|here's)[:\s]*/i, "")
+        .replace(/^["']|["']$/g, "")
+        .split("\n").filter((l: string) => l.length > 20).join("\n")
+        .trim();
+      generatedPrompt = cleanPrompt || reasoning.split("\n").pop()?.trim() || "";
+    }
+    if (!generatedPrompt) throw new Error("生成提示词失败，模型返回为空");
 
     db.update(tasks).set({ prompt: generatedPrompt, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
 

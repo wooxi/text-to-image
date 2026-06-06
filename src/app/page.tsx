@@ -67,7 +67,7 @@ export default function HomePage() {
 
   const fetchLiveTasks = useCallback(async () => {
     try {
-      const res = await fetch("/api/tasks?status=pending,processing");
+      const res = await fetch("/api/tasks?status=pending,processing,failed");
       const data = await res.json();
       if (data.success) setLiveTasks(data.data);
     } catch {}
@@ -78,11 +78,12 @@ export default function HomePage() {
     let emptyCount = 0;
     pollingRef.current = setInterval(async () => {
       try {
-        const res = await fetch("/api/tasks?status=pending,processing");
+        const res = await fetch("/api/tasks?status=pending,processing,failed");
         const data = await res.json();
         if (data.success) {
           setLiveTasks(data.data);
-          if (data.data.length === 0) {
+          const activeTasks = data.data.filter((t: TaskRecord) => t.status === "pending" || t.status === "processing");
+          if (activeTasks.length === 0) {
             emptyCount++;
             if (emptyCount >= 3 && pollingRef.current) {
               clearInterval(pollingRef.current);
