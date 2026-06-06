@@ -221,8 +221,13 @@ export default function HomePage() {
           {mode === "video" && (
             <div className="space-y-3">
               <h2 className="text-base sm:text-lg font-semibold text-app-text">视频生成</h2>
-              <ImageUploader image={refImage} onChange={setRefImage} />
-              <p className="text-xs text-app-text3">{refImage ? "图生视频：上传起始帧 + 描述画面动作" : "文生视频：输入画面动作描述即可"}</p>
+              <div>
+                <label className="text-xs text-app-text3">参考图 URL（图生视频，可选）</label>
+                <input value={refImage} onChange={e => setRefImage(e.target.value)}
+                  className="w-full mt-1 px-3 py-2 bg-app-bg border border-app-border rounded-lg text-sm text-app-text focus:outline-none"
+                  placeholder="https://example.com/image.png（公网可访问的图片地址）" />
+              </div>
+              <p className="text-xs text-app-text3">{refImage ? "图生视频：以参考图 + 描述画面动作" : "文生视频：输入画面动作描述即可"}</p>
 
               <div className="relative">
                 <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3}
