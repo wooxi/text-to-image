@@ -12,6 +12,7 @@ interface Props {
 
 export default function Lightbox({ src, alt, keywords, onClose, onDelete }: Props) {
   const [copied, setCopied] = useState(false);
+  const isVideoFile = /\.(mp4|webm|mov)$/i.test(src);
 
   const handleCopy = async () => {
     try {
@@ -55,16 +56,16 @@ export default function Lightbox({ src, alt, keywords, onClose, onDelete }: Prop
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex-shrink-0 flex items-center justify-center bg-black/30 md:max-w-[60vw] max-h-[50vh] md:max-h-[90vh]">
-          <img
-            src={src}
-            alt={alt}
-            className="max-w-full max-h-[50vh] md:max-h-[90vh] object-contain"
-          />
+          {isVideoFile ? (
+            <video src={src} controls autoPlay className="max-w-full max-h-[50vh] md:max-h-[90vh] rounded-lg" />
+          ) : (
+            <img src={src} alt={alt} className="max-w-full max-h-[50vh] md:max-h-[90vh] object-contain" />
+          )}
         </div>
 
         <div className="flex flex-col p-5 md:w-80 lg:w-96 overflow-auto max-h-[45vh] md:max-h-[90vh]">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-[var(--text-primary)]">图片详情</h3>
+            <h3 className="text-sm font-medium text-[var(--text-primary)]">{isVideoFile ? "视频详情" : "图片详情"}</h3>
             <button
               onClick={onClose}
               className="w-7 h-7 rounded-full border border-[var(--border)] text-[var(--text-secondary)] flex items-center justify-center text-sm hover:bg-[var(--bg-tertiary)] transition flex-shrink-0"

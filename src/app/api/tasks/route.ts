@@ -215,6 +215,12 @@ async function processVideoTask(taskId: number, width: number, height: number, n
         await downloadFile(videoUrl, savePath);
         const videoPath = `/videos/generated/${filename}`;
 
+        db.insert(imageHistory).values({
+          keywordNames: task.keywordNames,
+          prompt: prompt,
+          imagePath: videoPath,
+        }).run();
+
         db.update(tasks).set({ status: "done", videoPath, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
         return;
       }

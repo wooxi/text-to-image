@@ -45,8 +45,8 @@ export default function HomePage() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [mode, setMode] = useState<"keywords" | "manual" | "img2img" | "video">("keywords");
   const [refImage, setRefImage] = useState("");
-  const [videoWidth, setVideoWidth] = useState(1152);
-  const [videoHeight, setVideoHeight] = useState(768);
+  const [videoWidth, setVideoWidth] = useState(1920);
+  const [videoHeight, setVideoHeight] = useState(1080);
   const [videoFrames, setVideoFrames] = useState(121);
   const [videoFps, setVideoFps] = useState(24);
   const [liveTasks, setLiveTasks] = useState<TaskRecord[]>([]);
@@ -240,14 +240,14 @@ export default function HomePage() {
                   <label className="text-xs text-app-text3">宽度</label>
                   <select value={videoWidth} onChange={e => setVideoWidth(Number(e.target.value))}
                     className="w-full mt-1 px-2 py-1.5 bg-app-bg border border-app-border rounded-lg text-xs text-app-text focus:outline-none">
-                    <option value={576}>576</option><option value={768}>768</option><option value={1152}>1152</option><option value={1280}>1280</option>
+                    <option value={768}>768</option><option value={1080}>1080</option><option value={1152}>1152</option><option value={1920}>1920</option>
                   </select>
                 </div>
                 <div>
                   <label className="text-xs text-app-text3">高度</label>
                   <select value={videoHeight} onChange={e => setVideoHeight(Number(e.target.value))}
                     className="w-full mt-1 px-2 py-1.5 bg-app-bg border border-app-border rounded-lg text-xs text-app-text focus:outline-none">
-                    <option value={576}>576</option><option value={768}>768</option><option value={1152}>1152</option>
+                    <option value={576}>576</option><option value={768}>768</option><option value={1080}>1080</option><option value={1152}>1152</option>
                   </select>
                 </div>
                 <div>
