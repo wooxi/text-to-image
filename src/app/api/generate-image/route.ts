@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
     const url = endpoint.replace(/\/+$/, "") + "/images/generations";
 
-    const qualitySuffix = ", perfect anatomy, correct proportions, anatomically correct human body, no extra limbs, no deformed hands, professional photography, highly detailed, masterpiece";
+    const qualitySuffix = ", perfect anatomy, anatomically correct, each body part clearly separated and distinct, no merged limbs, no hands touching legs, no extra appendages, correct number of fingers and toes, natural body proportions, no deformities, professional photography, highly detailed, masterpiece";
     const finalPrompt = prompt + qualitySuffix;
 
     const response = await fetch(url, {

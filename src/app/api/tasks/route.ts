@@ -42,11 +42,12 @@ async function processTask(taskId: number) {
 3. 适当添加画质增强词（highly detailed, 8k, masterpiece, professional photography, sharp focus 等）
 4. 长度控制在 80-250 词之间
 
-画质与规范性要求（必须包含在提示词中）：
-- perfect anatomy, correct human proportions, anatomically correct
-- no extra limbs, no missing limbs, no fused fingers, no deformed hands
-- five fingers on each hand if visible, natural hand poses
-- symmetrical face if facing camera, correct number of limbs
+画质与规范性要求（必须包含在提示词末尾）：
+- perfect anatomy, anatomically correct, each body part clearly separated and distinct
+- no merged limbs, no hands touching or resting on legs, no extra appendages
+- correct number of fingers and toes, natural body proportions
+- no deformities, no fused body parts, no extra limbs emerging from wrong places
+- if hands are visible, they must be separate from legs and other body parts
 
 输出格式：只输出提示词本身，不要加任何解释、引号、前缀或后缀，不要输出思考过程。`;
 
@@ -72,7 +73,7 @@ async function processTask(taskId: number) {
 
     if (!imgApiKey) throw new Error("请先在后台配置生图 API Key");
 
-    const qualitySuffix = ", perfect anatomy, correct proportions, anatomically correct human body, no extra limbs, no deformed hands, professional photography, highly detailed, masterpiece";
+    const qualitySuffix = ", perfect anatomy, anatomically correct, each body part clearly separated and distinct, no merged limbs, no hands touching legs, no extra appendages, correct number of fingers and toes, natural body proportions, no deformities, professional photography, highly detailed, masterpiece";
     const finalPrompt = generatedPrompt + qualitySuffix;
 
     const imgUrl = imgEndpoint.replace(/\/+$/, "") + "/images/generations";
