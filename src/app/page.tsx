@@ -16,6 +16,8 @@ const SIZE_TIERS: Record<string, Record<string, string>> = {
   "1:1":  { "2048": "2048x2048", "1536": "1536x1536", "1024": "1024x1024", "512": "512x512" },
   "9:16": { "2048": "1440x2560", "1536": "1152x2048", "1024": "768x1344", "512": "768x1344" },
   "16:9": { "2048": "2048x1152", "1536": "1344x768", "1024": "1344x768", "512": "1344x768" },
+  "4:3":  { "2048": "2048x1536", "1536": "1536x1152", "1024": "1024x768", "512": "1024x768" },
+  "3:4":  { "2048": "1536x2048", "1536": "1152x1536", "1024": "768x1024", "512": "768x1024" },
 };
 
 function getImageSize(keywords: string[]): string {
@@ -232,7 +234,7 @@ export default function HomePage() {
 
           {mode === "keywords" ? (
             <>
-              <h2 className="text-base sm:text-lg font-semibold text-app-text mb-3 sm:mb-4">① 选择关键词</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-app-text mb-3 sm:mb-4">选择关键词</h2>
               <KeywordSelector groups={groups} selected={selected} onToggle={toggleKeyword} />
               {selected.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2 items-center">
@@ -254,7 +256,7 @@ export default function HomePage() {
                 className="mt-4 w-full py-2.5 sm:py-3 text-white font-medium rounded-xl transition text-base sm:text-lg"
                 style={{ background: loading || !loggedIn ? "var(--bg-tertiary)" : "var(--accent)", color: loading || !loggedIn ? "var(--text-muted)" : "#fff" }}
               >
-                {!loggedIn ? "请先登录" : loading ? statusText : "② 生成提示词"}
+                {!loggedIn ? "请先登录" : loading ? statusText : "生成提示词"}
               </button>
             </>
           ) : (
@@ -268,7 +270,7 @@ export default function HomePage() {
             <div className="mt-4 space-y-3 pt-4 border-t border-[var(--border)]">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium text-app-text">
-                  {mode === "keywords" ? "③ 提示词（可编辑后生图）" : "提示词"}
+                  {mode === "keywords" ? "提示词（可编辑后生图）" : "提示词"}
                 </label>
                 <span className="text-xs text-app-text3">{prompt.length} 字符</span>
               </div>
@@ -285,7 +287,7 @@ export default function HomePage() {
                 className="w-full py-2.5 sm:py-3 text-white font-medium rounded-xl transition text-base sm:text-lg"
                 style={{ background: loading || !prompt.trim() || !loggedIn ? "var(--bg-tertiary)" : "var(--accent)", color: loading || !loggedIn ? "var(--text-muted)" : "#fff" }}
               >
-                {!loggedIn ? "请先登录" : loading ? statusText : "④ 生成图片"}
+                {!loggedIn ? "请先登录" : loading ? statusText : "生成图片"}
               </button>
             </div>
           )}

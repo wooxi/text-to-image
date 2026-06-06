@@ -61,6 +61,7 @@ export async function POST(request: Request) {
         ],
         temperature: 0.8,
         max_tokens: 2048,
+        thinking: { type: "disabled" },
       }),
     });
 
