@@ -3,6 +3,12 @@ import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { config, tasks, imageHistory } from "@/lib/db/schema";
 import { eq, desc, or } from "drizzle-orm";
+
+// 启动时清理孤儿任务（上次被杀掉的 processing 任务）
+db.update(tasks)
+  .set({ status: "failed", error: "服务重启，任务中断，请重试" })
+  .where(eq(tasks.status, "processing"))
+  .run();
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import path from "path";
@@ -211,7 +217,7 @@ async function processVideoTask(taskId: number, width: number, height: number, n
 
     for (let i = 0; i < 360; i++) {
       await new Promise((r) => setTimeout(r, 5000));
-      const statusRes = await fetch(`${baseUrl}/agnesapi?video_id=${videoId}`, {
+      const statusRes = await fetch(`${baseUrl}/agnesapi?video_id=${encodeURIComponent(videoId)}`, {
         headers: { Authorization: `Bearer ${key}` },
       });
       if (!statusRes.ok) continue;
