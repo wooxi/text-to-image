@@ -155,7 +155,7 @@ export default function HomePage() {
     if (!prompt.trim()) { alert("请先输入内容"); return; }
     setStatusText("AI 润色中..."); setLoading(true);
     try {
-      const res = await fetch("/api/polish", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: prompt }) });
+      const res = await fetch("/api/polish", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: prompt, mode }) });
       const data = await res.json();
       if (data.success) setPrompt(data.data.text); else alert(data.error || "润色失败");
     } catch { alert("润色出错"); }
