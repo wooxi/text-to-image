@@ -4,20 +4,24 @@ import { db } from "@/lib/db";
 import { config, tasks, imageHistory } from "@/lib/db/schema";
 import { eq, desc, or } from "drizzle-orm";
 
-// 启动时清理孤儿任务（仅执行一次）
-let cleaned = false;
+let startupCleaned = false;
 function cleanupOrphanTasks() {
-  if (cleaned) return;
-  cleaned = true;
+  if (startupCleaned) return;
+  startupCleaned = true;
   try {
-    const result = db.update(tasks)
-      .set({ status: "failed", error: "服务重启，任务中断，请重试" })
-      .where(eq(tasks.status, "processing"))
-      .run();
-    if (result.changes > 0) console.log(`[cleanup] 已清理 ${result.changes} 个孤儿视频任务`);
-  } catch {}
+    const cleaning = db.select().from(tasks).where(eq(tasks.status, "processing")).all();
+    if (cleaning.length > 0) {
+      console.log(`[cleanup] 发现 ${cleaning.length} 个 processing 任务，标记为 failed`);
+      db.update(tasks)
+        .set({ status: "failed", error: "服务重启，任务中断，请重试", updatedAt: new Date().toISOString() })
+        .where(eq(tasks.status, "processing"))
+        .run();
+    }
+  } catch (e) {
+    console.error("[cleanup] 孤儿任务清理失败:", e);
+  }
 }
-cleanupOrphanTasks();
+try { cleanupOrphanTasks(); } catch {}
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import path from "path";
@@ -218,22 +222,43 @@ async function processVideoTask(taskId: number, width: number, height: number, n
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
       body: JSON.stringify(reqBody),
     });
-    if (!createRes.ok) throw new Error(`视频创建失败: ${await createRes.text()}`);
+    if (!createRes.ok) {
+      const errText = await createRes.text();
+      console.error(`[video#${taskId}] 创建失败: ${createRes.status}`, errText);
+      throw new Error(`视频创建失败: ${errText}`);
+    }
     const createData = await createRes.json();
     const videoId = createData.video_id;
+    if (!videoId) {
+      console.error(`[video#${taskId}] 创建返回无 video_id:`, JSON.stringify(createData));
+      throw new Error("视频创建返回无 video_id");
+    }
+    console.log(`[video#${taskId}] 已创建, video_id=${videoId.substring(0, 20)}...`);
 
     db.update(tasks).set({ videoId, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
 
     for (let i = 0; i < 360; i++) {
       await new Promise((r) => setTimeout(r, 5000));
-      const statusRes = await fetch(`${baseUrl}/agnesapi?video_id=${encodeURIComponent(videoId)}`, {
-        headers: { Authorization: `Bearer ${key}` },
-      });
-      if (!statusRes.ok) continue;
+      let statusRes: Response;
+      try {
+        statusRes = await fetch(`${baseUrl}/agnesapi?video_id=${encodeURIComponent(videoId)}`, {
+          headers: { Authorization: `Bearer ${key}` },
+        });
+      } catch (fetchErr) {
+        console.log(`[video#${taskId}] 轮询网络错误 (第${i + 1}次):`, (fetchErr as Error).message);
+        continue;
+      }
+      if (!statusRes.ok) {
+        console.log(`[video#${taskId}] 轮询返回 ${statusRes.status} (第${i + 1}次)`);
+        continue;
+      }
       const statusData = await statusRes.json();
+      const progress = statusData.progress ?? 0;
+      console.log(`[video#${taskId}] 轮询第${i + 1}次: status=${statusData.status}, progress=${progress}%`);
 
-      const videoUrl = statusData.video_url || statusData.remixed_from_video_id || statusData.url;
-      if ((statusData.status === "completed" || (statusData.completed_at !== null && statusData.completed_at !== undefined)) && videoUrl) {
+      if (statusData.status === "completed") {
+        const videoUrl = statusData.video_url || statusData.remixed_from_video_id || statusData.url;
+        if (!videoUrl) throw new Error("视频完成但未返回下载链接");
         const publicDir = path.join(process.cwd(), "public", "videos", "generated");
         if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
         const filename = `${uuidv4()}.mp4`;
@@ -248,10 +273,11 @@ async function processVideoTask(taskId: number, width: number, height: number, n
         }).run();
 
         db.update(tasks).set({ status: "done", videoPath, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
+        console.log(`[video#${taskId}] 完成! 文件: ${videoPath}`);
         return;
       }
-      if (statusData.status === "failed" || (statusData.error && statusData.error !== null)) {
-        const errDetail = typeof statusData.error === "object" ? JSON.stringify(statusData.error) : String(statusData.error || "");
+      if (statusData.status === "failed") {
+        const errDetail = typeof statusData.error === "object" ? JSON.stringify(statusData.error) : String(statusData.error || "未知错误");
         throw new Error("视频生成失败: " + errDetail);
       }
       db.update(tasks).set({ updatedAt: now() }).where(eq(tasks.id, taskId)).run();
