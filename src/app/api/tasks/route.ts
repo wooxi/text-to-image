@@ -266,13 +266,25 @@ async function processVideoTask(taskId: number, width: number, height: number, n
         await downloadFile(videoUrl, savePath);
         const videoPath = `/videos/generated/${filename}`;
 
+        let posterPath = "";
+        try {
+          const posterFilename = filename.replace(".mp4", ".jpg");
+          const posterSavePath = path.join(publicDir, posterFilename);
+          const { execSync } = await import("child_process");
+          execSync(`ffmpeg -y -i "${savePath}" -ss 0.5 -vframes 1 -q:v 2 "${posterSavePath}"`, { stdio: "pipe" });
+          posterPath = `/videos/generated/${posterFilename}`;
+          console.log(`[video#${taskId}] 海报生成: ${posterPath}`);
+        } catch (posterErr) {
+          console.log(`[video#${taskId}] 海报生成失败 (不影响视频):`, (posterErr as Error).message);
+        }
+
         db.insert(imageHistory).values({
           keywordNames: task.keywordNames,
           prompt: prompt,
           imagePath: videoPath,
         }).run();
 
-        db.update(tasks).set({ status: "done", videoPath, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
+        db.update(tasks).set({ status: "done", videoPath, posterPath, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
         console.log(`[video#${taskId}] 完成! 文件: ${videoPath}`);
         return;
       }

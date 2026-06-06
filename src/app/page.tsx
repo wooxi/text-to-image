@@ -32,7 +32,7 @@ function getImageSize(keywords: string[]): string {
 interface TaskRecord {
   id: number; status: string; type: string;
   keywordNames: string; prompt: string;
-  imagePath: string; videoPath: string; error: string;
+  imagePath: string; videoPath: string; posterPath: string; error: string;
 }
 
 export default function HomePage() {
@@ -136,7 +136,7 @@ export default function HomePage() {
       const res = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!data.success) { alert(data.error || "创建失败"); return; }
-      setLiveTasks(prev => [...prev, { id: data.data.taskId, status: "pending", type: mode, keywordNames: mode === "keywords" ? selected.join(", ") : "手动输入", prompt: (body.prompt as string) || "", imagePath: "", videoPath: "", error: "" }]);
+      setLiveTasks(prev => [...prev, { id: data.data.taskId, status: "pending", type: mode, keywordNames: mode === "keywords" ? selected.join(", ") : "手动输入", prompt: (body.prompt as string) || "", imagePath: "", videoPath: "", posterPath: "", error: "" }]);
       startPolling();
     } catch { alert("创建失败"); }
     finally { setLoading(false); setStatusText(""); }

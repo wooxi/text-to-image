@@ -3,7 +3,7 @@
 interface TaskRecord {
   id: number; status: string; type: string;
   keywordNames: string; prompt: string;
-  imagePath: string; videoPath: string; error: string;
+  imagePath: string; videoPath: string; posterPath: string; error: string;
 }
 
 interface Props {

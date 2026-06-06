@@ -46,6 +46,7 @@ export const tasks = sqliteTable("tasks", {
   referenceImage: text("reference_image").notNull().default(""),
   videoPath: text("video_path").notNull().default(""),
   videoId: text("video_id").notNull().default(""),
+  posterPath: text("poster_path").notNull().default(""),
   size: text("size").notNull().default("1024x1024"),
   error: text("error").notNull().default(""),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),

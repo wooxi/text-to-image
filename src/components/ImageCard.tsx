@@ -7,13 +7,15 @@ import Lightbox from "./Lightbox";
 interface Props {
   record: ImageRecord;
   onDelete: (id: number) => void;
+  posterPath?: string;
 }
 
 function isVideo(path: string) { return /\.(mp4|webm|mov)$/i.test(path); }
 
-export default function ImageCard({ record, onDelete }: Props) {
+export default function ImageCard({ record, onDelete, posterPath }: Props) {
   const [showLightbox, setShowLightbox] = useState(false);
   const video = isVideo(record.imagePath);
+  const poster = posterPath || (video ? record.imagePath.replace(/\.\w+$/, ".jpg") : undefined);
 
   const handleDownload = async () => {
     try {
@@ -33,7 +35,13 @@ export default function ImageCard({ record, onDelete }: Props) {
       <div className="break-inside-avoid mb-3 sm:mb-4 overflow-hidden transition group relative">
         {video ? (
           <div className="relative cursor-pointer" onClick={() => setShowLightbox(true)}>
-            <video src={record.imagePath} className="w-full h-auto block rounded-lg" muted preload="metadata" />
+            <img
+              src={poster}
+              alt={record.prompt}
+              className="w-full h-auto block rounded-lg"
+              loading="lazy"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
               <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
