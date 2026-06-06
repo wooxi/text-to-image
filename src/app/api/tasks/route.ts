@@ -176,3 +176,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: "获取任务失败" }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    await requireAuth();
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ success: false, error: "缺少id" }, { status: 400 });
+    db.delete(tasks).where(eq(tasks.id, Number(id))).run();
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    if ((e as Error).message === "Unauthorized") {
+      return NextResponse.json({ success: false, error: "未登录" }, { status: 401 });
+    }
+    return NextResponse.json({ success: false, error: "删除失败" }, { status: 500 });
+  }
+}

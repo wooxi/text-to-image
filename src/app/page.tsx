@@ -43,6 +43,7 @@ export default function HomePage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
+  const [statusText, setStatusText] = useState("");
   const [records, setRecords] = useState<ImageRecord[]>([]);
   const [loggedIn, setLoggedIn] = useState(false);
   const [mode, setMode] = useState<"keywords" | "manual">("keywords");
@@ -107,7 +108,7 @@ export default function HomePage() {
           setLoggedIn(true);
           fetchHistory();
           fetchLiveTasks();
-          if (data.data) startPolling();
+          startPolling();
         }
       });
     return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
@@ -119,54 +120,88 @@ export default function HomePage() {
     );
   };
 
-  const handleGenerate = async () => {
-    const finalPrompt = prompt.trim();
-    const useKeywords = mode === "keywords";
-
-    if (useKeywords && selected.length === 0) { alert("请至少选择一个关键词"); return; }
-    if (!useKeywords && !finalPrompt) { alert("请输入提示词"); return; }
+  // Step 1: 生成提示词
+  const handleGeneratePrompt = async () => {
+    if (selected.length === 0) { alert("请至少选择一个关键词"); return; }
     if (!loggedIn) { alert("请先登录"); return; }
 
     setLoading(true);
+    setStatusText("正在生成提示词...");
+    setPrompt("");
+
+    try {
+      const res = await fetch("/api/generate-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keywords: selected }),
+      });
+      const data = await res.json();
+      if (!data.success) { alert(data.error || "生成失败"); return; }
+      setPrompt(data.data.prompt);
+    } catch {
+      alert("生成过程出错");
+    } finally {
+      setLoading(false);
+      setStatusText("");
+    }
+  };
+
+  // Step 2: 异步生图
+  const handleGenerateImage = async () => {
+    const text = prompt.trim();
+    if (!text) { alert("请输入或先生成提示词"); return; }
+    if (!loggedIn) { alert("请先登录"); return; }
+
+    setLoading(true);
+    setStatusText("正在创建任务...");
 
     try {
       const res = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          keywords: useKeywords ? selected.join(", ") : finalPrompt,
-          size: useKeywords ? getImageSize(selected) : "1024x1024",
+          keywords: mode === "keywords" ? selected.join(", ") : "手动输入",
+          size: mode === "keywords" ? getImageSize(selected) : "1024x1024",
         }),
       });
       const data = await res.json();
-      if (!data.success) { alert(data.error || "创建任务失败"); return; }
+      if (!data.success) { alert(data.error || "创建失败"); return; }
 
       setLiveTasks((prev) => [...prev, {
         id: data.data.taskId,
         status: "pending",
-        keywordNames: useKeywords ? selected.join(", ") : "手动输入",
+        keywordNames: mode === "keywords" ? selected.join(", ") : "手动输入",
         prompt: "",
         imagePath: "",
         error: "",
       }]);
       startPolling();
     } catch {
-      alert("创建任务失败");
+      alert("创建失败");
     } finally {
       setLoading(false);
+      setStatusText("");
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDeleteHistory = async (id: number) => {
     if (!confirm("确定删除这张图片吗？")) return;
     try {
       const res = await fetch(`/api/history?id=${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) fetchHistory();
       else alert(data.error || "删除失败");
-    } catch {
-      alert("删除失败");
-    }
+    } catch { alert("删除失败"); }
+  };
+
+  const handleDeleteTask = async (id: number) => {
+    try {
+      const res = await fetch(`/api/tasks?id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        setLiveTasks((prev) => prev.filter((t) => t.id !== id));
+      }
+    } catch {}
   };
 
   return (
@@ -185,31 +220,19 @@ export default function HomePage() {
 
         <div className="bg-app-bg2 border border-app-border rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="flex gap-1 mb-4 bg-app-bg rounded-lg p-1">
-            <button
-              onClick={() => setMode("keywords")}
-              className="flex-1 py-2 rounded-md text-sm font-medium transition"
-              style={{
-                background: mode === "keywords" ? "var(--accent)" : "transparent",
-                color: mode === "keywords" ? "#fff" : "var(--text-secondary)",
-              }}
-            >
+            <button onClick={() => setMode("keywords")} className="flex-1 py-2 rounded-md text-sm font-medium transition"
+              style={{ background: mode === "keywords" ? "var(--accent)" : "transparent", color: mode === "keywords" ? "#fff" : "var(--text-secondary)" }}>
               关键词组合
             </button>
-            <button
-              onClick={() => setMode("manual")}
-              className="flex-1 py-2 rounded-md text-sm font-medium transition"
-              style={{
-                background: mode === "manual" ? "var(--accent)" : "transparent",
-                color: mode === "manual" ? "#fff" : "var(--text-secondary)",
-              }}
-            >
+            <button onClick={() => setMode("manual")} className="flex-1 py-2 rounded-md text-sm font-medium transition"
+              style={{ background: mode === "manual" ? "var(--accent)" : "transparent", color: mode === "manual" ? "#fff" : "var(--text-secondary)" }}>
               手动输入
             </button>
           </div>
 
           {mode === "keywords" ? (
             <>
-              <h2 className="text-base sm:text-lg font-semibold text-app-text mb-3 sm:mb-4">选择关键词组合</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-app-text mb-3 sm:mb-4">① 选择关键词</h2>
               <KeywordSelector groups={groups} selected={selected} onToggle={toggleKeyword} />
               {selected.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2 items-center">
@@ -220,42 +243,56 @@ export default function HomePage() {
                   <span className="text-xs text-app-text3 ml-2">
                     输出: {getImageSize(selected)}
                     {(selected.some(k => k.includes("2K") || k.includes("4K") || k.includes("8K"))) && (
-                      <span className="ml-1 opacity-60">(画质已注入提示词)</span>
+                      <span className="ml-1 opacity-60">(画质已注入)</span>
                     )}
                   </span>
                 </div>
               )}
+              <button
+                onClick={handleGeneratePrompt}
+                disabled={loading || selected.length === 0 || !loggedIn}
+                className="mt-4 w-full py-2.5 sm:py-3 text-white font-medium rounded-xl transition text-base sm:text-lg"
+                style={{ background: loading || !loggedIn ? "var(--bg-tertiary)" : "var(--accent)", color: loading || !loggedIn ? "var(--text-muted)" : "#fff" }}
+              >
+                {!loggedIn ? "请先登录" : loading ? statusText : "② 生成提示词"}
+              </button>
             </>
           ) : (
             <div>
               <h2 className="text-base sm:text-lg font-semibold text-app-text mb-3">手动输入提示词</h2>
-              <p className="text-xs text-app-text3 mb-2">直接输入文生图提示词（英文效果更好），点击生成图片</p>
+              <p className="text-xs text-app-text3 mb-2">直接输入文生图提示词（英文效果更好）</p>
+            </div>
+          )}
+
+          {(prompt || mode === "manual") && (
+            <div className="mt-4 space-y-3 pt-4 border-t border-[var(--border)]">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-app-text">
+                  {mode === "keywords" ? "③ 提示词（可编辑后生图）" : "提示词"}
+                </label>
+                <span className="text-xs text-app-text3">{prompt.length} 字符</span>
+              </div>
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={4}
                 className="w-full px-3 py-2.5 bg-app-bg border border-app-border rounded-xl text-sm text-app-text leading-relaxed resize-y focus:outline-none"
-                style={{ outlineColor: "var(--accent)" }}
-                placeholder="在此输入提示词..."
+                placeholder="在此输入或编辑提示词..."
               />
+              <button
+                onClick={handleGenerateImage}
+                disabled={loading || !prompt.trim() || !loggedIn}
+                className="w-full py-2.5 sm:py-3 text-white font-medium rounded-xl transition text-base sm:text-lg"
+                style={{ background: loading || !prompt.trim() || !loggedIn ? "var(--bg-tertiary)" : "var(--accent)", color: loading || !loggedIn ? "var(--text-muted)" : "#fff" }}
+              >
+                {!loggedIn ? "请先登录" : loading ? statusText : "④ 生成图片"}
+              </button>
             </div>
           )}
-
-          <button
-            onClick={handleGenerate}
-            disabled={loading || !loggedIn || (mode === "keywords" ? selected.length === 0 : !prompt.trim())}
-            className="mt-5 w-full py-2.5 sm:py-3 text-white font-medium rounded-xl transition text-base sm:text-lg"
-            style={{
-              background: loading || !loggedIn ? "var(--bg-tertiary)" : "var(--accent)",
-              color: loading || !loggedIn ? "var(--text-muted)" : "#fff",
-            }}
-          >
-            {!loggedIn ? "请先登录" : loading ? "正在创建任务..." : "生成图片"}
-          </button>
         </div>
 
         <h2 className="text-base sm:text-lg font-semibold text-app-text mb-4">生成作品</h2>
-        <MasonryGallery records={records} liveTasks={liveTasks} onDelete={handleDelete} />
+        <MasonryGallery records={records} liveTasks={liveTasks} onDelete={handleDeleteHistory} onDeleteTask={handleDeleteTask} />
       </main>
     </div>
   );
