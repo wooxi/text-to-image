@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root,
+[data-theme="dark"] {
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #252525;
+  --border: #2a2a2a;
+  --border-hover: #4a4a4a;
+  --text-primary: #e0e0e0;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
+  --accent-light: rgba(99, 102, 241, 0.2);
+  --accent-glow: rgba(99, 102, 241, 0.3);
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.15);
+  --success: #22c55e;
+  --success-bg: rgba(34, 197, 94, 0.15);
+}
+
+[data-theme="light"] {
+  --bg-primary: #fdfaf5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f5f0e8;
+  --border: #e5ddd0;
+  --border-hover: #c5b8a0;
+  --text-primary: #3d3629;
+  --text-secondary: #8c8273;
+  --text-muted: #b8a898;
+  --accent: #e8833a;
+  --accent-hover: #d4722b;
+  --accent-light: rgba(232, 131, 58, 0.15);
+  --accent-glow: rgba(232, 131, 58, 0.2);
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.1);
+  --success: #16a34a;
+  --success-bg: rgba(22, 163, 74, 0.1);
+}
+
+body {
+  margin: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}

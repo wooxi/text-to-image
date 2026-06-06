@@ -1,0 +1,6 @@
+node_modules/
+.next/
+.server.pid
+.server.log
+data/
+public/images/generated/
