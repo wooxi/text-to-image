@@ -22,6 +22,25 @@ function insertKeywordGroup(group: (typeof defaultKeywordGroups)[number]) {
   }
 }
 
+function appendMissingManagedKeywords() {
+  const groups = db.select().from(keywordGroups).all();
+
+  for (const presetGroup of defaultKeywordGroups) {
+    const existingGroup = groups.find((group) => group.slug === presetGroup.slug);
+    if (!existingGroup) continue;
+
+    const existingKeywords = new Set(
+      db.select().from(keywords).where(eq(keywords.groupId, existingGroup.id)).all().map((keyword) => keyword.name)
+    );
+
+    for (const keyword of presetGroup.keywords) {
+      if (!existingKeywords.has(keyword)) {
+        db.insert(keywords).values({ groupId: existingGroup.id, name: keyword }).run();
+      }
+    }
+  }
+}
+
 function syncDefaultKeywordGroups() {
   const groups = db.select().from(keywordGroups).all();
   const existingSlugs = new Set(groups.map((group) => group.slug));
@@ -56,7 +75,10 @@ function syncDefaultKeywordGroups() {
     }
   }
 
-  if (needsVersionSync) upsertKeywordSyncVersion();
+  if (needsVersionSync) {
+    appendMissingManagedKeywords();
+    upsertKeywordSyncVersion();
+  }
 }
 
 export async function GET() {

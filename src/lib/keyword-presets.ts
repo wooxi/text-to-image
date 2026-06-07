@@ -7,7 +7,7 @@ export interface KeywordPresetGroup {
 
 export const legacyKeywordGroupSlugs = ["scene", "character", "style", "lighting", "composition"];
 export const legacyOnlyKeywordGroupSlugs = ["character", "style", "clothing", "body-part"];
-export const keywordSyncVersion = 2;
+export const keywordSyncVersion = 4;
 
 export const defaultKeywordGroups: KeywordPresetGroup[] = [
   {
@@ -57,6 +57,17 @@ export const defaultKeywordGroups: KeywordPresetGroup[] = [
     name: "情绪氛围",
     description: "这一组不改主体结构，主要帮助模型往你想要的情绪和气质方向收敛。",
     keywords: ["清新通透", "电影感", "安静松弛", "浪漫氛围", "高级冷调", "温暖治愈", "都市感", "故事感", "氛围感大片", "清冷疏离", "少女感", "复古情绪"],
+  },
+  {
+    slug: "image-style",
+    name: "图片风格",
+    description: "这一组决定整体呈现语言，模型会据此选择更偏照片、插画、手绘还是三维渲染的表达方式。",
+    keywords: [
+      "写实摄影", "电影写实", "商业广告", "胶片质感", "HDR 风格", "RAW 直出", "纪实抓拍", "影棚棚拍",
+      "日漫风格", "美漫风格", "二次元插画", "国风插画", "扁平插画", "日系厚涂", "韩系头像", "儿童绘本", "漫画分镜",
+      "素描手稿", "水彩绘制", "油画笔触", "水墨风格", "炭笔速写", "马克笔上色", "版画质感",
+      "像素风格", "3D 渲染", "黏土风格", "赛博风格",
+    ],
   },
   {
     slug: "clothing",
