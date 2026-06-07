@@ -8,12 +8,17 @@ import { defaultKeywordGroups, keywordSyncVersion, legacyKeywordGroupSlugs, lega
 const managedKeywordGroupSlugs = defaultKeywordGroups.map((group) => group.slug);
 const replaceableKeywordGroupSlugs = Array.from(new Set([...legacyKeywordGroupSlugs, ...legacyOnlyKeywordGroupSlugs, ...managedKeywordGroupSlugs]));
 
-function insertDefaultKeywordGroups() {
-  for (const group of defaultKeywordGroups) {
-    const inserted = db.insert(keywordGroups).values({ name: group.name, slug: group.slug }).returning().get();
-    for (const keyword of group.keywords) {
-      db.insert(keywords).values({ groupId: inserted.id, name: keyword }).run();
-    }
+function upsertKeywordSyncVersion() {
+  db.insert(config)
+    .values({ key: "keyword_sync_version", value: String(keywordSyncVersion) })
+    .onConflictDoUpdate({ target: config.key, set: { value: String(keywordSyncVersion), updatedAt: new Date().toISOString() } })
+    .run();
+}
+
+function insertKeywordGroup(group: (typeof defaultKeywordGroups)[number]) {
+  const inserted = db.insert(keywordGroups).values({ name: group.name, slug: group.slug }).returning().get();
+  for (const keyword of group.keywords) {
+    db.insert(keywords).values({ groupId: inserted.id, name: keyword }).run();
   }
 }
 
@@ -26,22 +31,32 @@ function syncDefaultKeywordGroups() {
   const needsVersionSync = (syncVersion?.value || "0") !== String(keywordSyncVersion);
 
   if (groups.length === 0) {
-    insertDefaultKeywordGroups();
-    db.insert(config).values({ key: "keyword_sync_version", value: String(keywordSyncVersion) }).onConflictDoUpdate({ target: config.key, set: { value: String(keywordSyncVersion), updatedAt: new Date().toISOString() } }).run();
+    for (const group of defaultKeywordGroups) insertKeywordGroup(group);
+    upsertKeywordSyncVersion();
     return;
   }
 
-  if (!hasLegacyOnlyGroups && !missingManagedGroups && !needsVersionSync) return;
+  if (hasLegacyOnlyGroups) {
+    for (const group of groups) {
+      if (replaceableKeywordGroupSlugs.includes(group.slug)) {
+        db.delete(keywords).where(eq(keywords.groupId, group.id)).run();
+        db.delete(keywordGroups).where(eq(keywordGroups.id, group.id)).run();
+      }
+    }
 
-  for (const group of groups) {
-    if (replaceableKeywordGroupSlugs.includes(group.slug)) {
-      db.delete(keywords).where(eq(keywords.groupId, group.id)).run();
-      db.delete(keywordGroups).where(eq(keywordGroups.id, group.id)).run();
+    for (const group of defaultKeywordGroups) insertKeywordGroup(group);
+    upsertKeywordSyncVersion();
+    return;
+  }
+
+  if (missingManagedGroups) {
+    const currentSlugs = new Set(db.select().from(keywordGroups).all().map((group) => group.slug));
+    for (const group of defaultKeywordGroups) {
+      if (!currentSlugs.has(group.slug)) insertKeywordGroup(group);
     }
   }
 
-  insertDefaultKeywordGroups();
-  db.insert(config).values({ key: "keyword_sync_version", value: String(keywordSyncVersion) }).onConflictDoUpdate({ target: config.key, set: { value: String(keywordSyncVersion), updatedAt: new Date().toISOString() } }).run();
+  if (needsVersionSync) upsertKeywordSyncVersion();
 }
 
 export async function GET() {
