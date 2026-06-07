@@ -1,0 +1,64 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platforms;android-34 build-tools;34.0.0"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js
+        run: npm run build
+
+      - name: Create web assets for Capacitor
+        run: |
+          mkdir -p out
+          cat > out/index.html << 'HTMLEOF'
+          <!DOCTYPE html>
+          <html>
+          <head><meta charset="utf-8"><title>AI 文生图</title>
+          <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+          <style>body{margin:0;background:#000;color:#fff;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:20px}
+          .loader{width:40px;height:40px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+          @keyframes spin{to{transform:rotate(360deg)}}</style></head>
+          <body><div><div class="loader"></div><p style="font-size:14px;opacity:.7">正在连接服务器...</p></div>
+          <script>window.location.href="http://192.168.100.6:8080";</script></body>
+          </html>
+          HTMLEOF
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Build APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: android/app/build/outputs/apk/debug/*.apk
