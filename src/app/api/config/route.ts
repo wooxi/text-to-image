@@ -5,12 +5,20 @@ import { config } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function GET() {
-  const items = db.select().from(config).all();
-  const map: Record<string, string> = {};
-  for (const item of items) {
-    map[item.key] = item.value;
+  try {
+    await requireAuth();
+    const items = db.select().from(config).all();
+    const map: Record<string, string> = {};
+    for (const item of items) {
+      map[item.key] = item.value;
+    }
+    return NextResponse.json({ success: true, data: map });
+  } catch (e) {
+    if ((e as Error).message === "Unauthorized") {
+      return NextResponse.json({ success: false, error: "未登录" }, { status: 401 });
+    }
+    return NextResponse.json({ success: false, error: "获取失败" }, { status: 500 });
   }
-  return NextResponse.json({ success: true, data: map });
 }
 
 export async function PUT(request: Request) {

@@ -33,6 +33,8 @@ export const imageHistory = sqliteTable("image_history", {
   keywordNames: text("keyword_names").notNull(),
   prompt: text("prompt").notNull(),
   imagePath: text("image_path").notNull(),
+  type: text("type").notNull().default("image"),
+  posterPath: text("poster_path").notNull().default(""),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
 
@@ -47,6 +49,7 @@ export const tasks = sqliteTable("tasks", {
   videoPath: text("video_path").notNull().default(""),
   videoId: text("video_id").notNull().default(""),
   posterPath: text("poster_path").notNull().default(""),
+  progress: integer("progress").notNull().default(0),
   size: text("size").notNull().default("1024x1024"),
   error: text("error").notNull().default(""),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),

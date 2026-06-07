@@ -94,6 +94,7 @@ export async function POST(request: Request) {
       keywordNames: keywords || prompt,
       prompt,
       imagePath,
+      type: "image",
     }).run();
 
     return NextResponse.json({ success: true, data: { imagePath, prompt } });

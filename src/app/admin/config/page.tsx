@@ -15,8 +15,15 @@ const configFields = [
   { key: "video_model", label: "视频模型名称", placeholder: "agnes-video-v2.0" },
 ];
 
+const modelTargets: Record<string, "llm" | "image" | "video"> = {
+  llm_model: "llm",
+  image_model: "image",
+  video_model: "video",
+};
+
 export default function ConfigPage() {
   const [values, setValues] = useState<Record<string, string>>({});
+  const [models, setModels] = useState<Record<string, string[]>>({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -26,9 +33,24 @@ export default function ConfigPage() {
     if (data.success) setValues(data.data);
   }, []);
 
+  const fetchModels = useCallback(async () => {
+    const targets = ["llm", "image", "video"];
+    const entries = await Promise.all(targets.map(async (target) => {
+      try {
+        const res = await fetch(`/api/config/models?target=${target}`);
+        const data = await res.json();
+        return [target, data.success ? data.data : []] as const;
+      } catch {
+        return [target, []] as const;
+      }
+    }));
+    setModels(Object.fromEntries(entries));
+  }, []);
+
   useEffect(() => {
     fetchConfig();
-  }, [fetchConfig]);
+    fetchModels();
+  }, [fetchConfig, fetchModels]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -85,13 +107,26 @@ export default function ConfigPage() {
         {configFields.map((field) => (
           <div key={field.key} className="bg-app-bg2 border border-app-border rounded-xl p-4">
             <label className="block text-sm text-app-text mb-2">{field.label}</label>
-            <input
-              type={field.type || "text"}
-              value={values[field.key] || ""}
-              onChange={(e) => setValues({ ...values, [field.key]: e.target.value })}
-              placeholder={field.placeholder}
-              className="w-full px-3 py-2 bg-app-bg border border-app-border rounded-lg text-app-text text-sm focus:outline-none"
-            />
+            {modelTargets[field.key] && models[modelTargets[field.key]]?.length > 0 ? (
+              <select
+                value={values[field.key] || ""}
+                onChange={(e) => setValues({ ...values, [field.key]: e.target.value })}
+                className="w-full px-3 py-2 bg-app-bg border border-app-border rounded-lg text-app-text text-sm focus:outline-none"
+              >
+                <option value="">请选择模型</option>
+                {models[modelTargets[field.key]].map((model) => (
+                  <option key={model} value={model}>{model}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type={field.type || "text"}
+                value={values[field.key] || ""}
+                onChange={(e) => setValues({ ...values, [field.key]: e.target.value })}
+                placeholder={field.placeholder}
+                className="w-full px-3 py-2 bg-app-bg border border-app-border rounded-lg text-app-text text-sm focus:outline-none"
+              />
+            )}
             <p className="text-xs text-app-text3 mt-1">Key: {field.key}</p>
           </div>
         ))}

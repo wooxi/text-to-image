@@ -17,7 +17,7 @@ export default function HistoryPage() {
   }, [fetchHistory]);
 
   const handleDelete = async (id: number) => {
-    if (!confirm("确定删除这条记录和对应的图片吗？")) return;
+    if (!confirm("确定删除这条记录和对应的文件吗？")) return;
     const res = await fetch(`/api/history?id=${id}`, { method: "DELETE" });
     const data = await res.json();
     if (data.success) {
@@ -35,6 +35,8 @@ export default function HistoryPage() {
     }
   };
 
+  const isVideo = (record: ImageRecord) => record.type === "video" || /\.(mp4|webm|mov)$/i.test(record.imagePath);
+
   return (
     <div>
       <h1 className="text-xl font-bold text-app-text mb-6">生成历史</h1>
@@ -49,11 +51,16 @@ export default function HistoryPage() {
             key={record.id}
             className="bg-app-bg2 border border-app-border rounded-xl overflow-hidden flex flex-col sm:flex-row"
           >
-            <img
-              src={record.imagePath}
-              alt={record.prompt}
-              className="w-full sm:w-32 h-32 object-cover flex-shrink-0"
-            />
+            <div className="relative w-full sm:w-32 h-32 flex-shrink-0 bg-black/20">
+              <img
+                src={isVideo(record) ? record.posterPath || record.imagePath.replace(/\.\w+$/, ".jpg") : record.imagePath}
+                alt={record.prompt}
+                className="w-full h-32 object-cover"
+              />
+              {isVideo(record) && (
+                <span className="absolute left-2 top-2 px-2 py-0.5 rounded bg-black/60 text-white text-[10px]">视频</span>
+              )}
+            </div>
             <div className="p-3 flex-1 min-w-0">
               <p className="text-xs text-app-text3 mb-1">
                 关键词: <span className="text-app-text2">{record.keywordNames}</span>

@@ -16,6 +16,8 @@ export interface ImageRecord {
   keywordNames: string;
   prompt: string;
   imagePath: string;
+  type: string;
+  posterPath: string;
   createdAt: string;
 }
 

@@ -34,6 +34,12 @@ export async function DELETE(request: Request) {
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
+      if (/\.(mp4|webm|mov)$/i.test(record.imagePath)) {
+        const posterPath = path.join(process.cwd(), "public", record.imagePath.replace(/\.\w+$/, ".jpg"));
+        if (fs.existsSync(posterPath)) {
+          fs.unlinkSync(posterPath);
+        }
+      }
     }
 
     db.delete(imageHistory).where(eq(imageHistory.id, Number(id))).run();

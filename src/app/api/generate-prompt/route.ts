@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { config, imageHistory } from "@/lib/db/schema";
+import { config } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 function getConfig(key: string): string {

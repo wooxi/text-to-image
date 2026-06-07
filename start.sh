@@ -35,7 +35,15 @@ echo "  本地:   http://localhost:$PORT"
 echo "  日志:   $LOG_FILE"
 echo "================================="
 
-setsid ./node_modules/.bin/next dev -H 0.0.0.0 -p "$PORT" > "$LOG_FILE" 2>&1 &
+echo "清理并构建生产产物..."
+rm -rf .next
+npm run build > "$LOG_FILE" 2>&1
+if [ $? -ne 0 ]; then
+    echo "构建失败，请查看日志: $LOG_FILE"
+    exit 1
+fi
+
+setsid ./node_modules/.bin/next start -H 0.0.0.0 -p "$PORT" >> "$LOG_FILE" 2>&1 &
 LAUNCH_PID=$!
 
 echo -n "等待服务启动"

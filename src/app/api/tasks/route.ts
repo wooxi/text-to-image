@@ -13,7 +13,7 @@ function cleanupOrphanTasks() {
     if (cleaning.length > 0) {
       console.log(`[cleanup] 发现 ${cleaning.length} 个 processing 任务，标记为 failed`);
       db.update(tasks)
-        .set({ status: "failed", error: "服务重启，任务中断，请重试", updatedAt: new Date().toISOString() })
+        .set({ status: "failed", progress: 0, error: "服务重启，任务中断，请重试", updatedAt: new Date().toISOString() })
         .where(eq(tasks.status, "processing"))
         .run();
     }
@@ -31,6 +31,15 @@ function getConfig(key: string): string {
   return row?.value || "";
 }
 
+function parseReferenceImages(value: string): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) return parsed.filter((item): item is string => typeof item === "string" && item.length > 0);
+  } catch {}
+  return [value];
+}
+
 async function downloadFile(url: string, savePath: string): Promise<void> {
   const fullUrl = url.startsWith("http") ? url : `https://${url}`;
   const response = await fetch(fullUrl);
@@ -44,15 +53,18 @@ async function processImageTask(taskId: number, isImg2img: boolean) {
   try {
     const task = db.select().from(tasks).where(eq(tasks.id, taskId)).get();
     if (!task) return;
-    db.update(tasks).set({ status: "processing", updatedAt: now() }).where(eq(tasks.id, taskId)).run();
+    db.update(tasks).set({ status: "processing", progress: 5, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
 
-    const llmEndpoint = getConfig("llm_endpoint") || "https://api.openai.com/v1";
-    const llmApiKey = getConfig("llm_api_key");
-    const llmModel = getConfig("llm_model") || "gpt-4o";
+    let generatedPrompt = task.prompt.trim();
 
-    if (!llmApiKey) throw new Error("请先配置 LLM API Key");
+    if (!generatedPrompt) {
+      const llmEndpoint = getConfig("llm_endpoint") || "https://api.openai.com/v1";
+      const llmApiKey = getConfig("llm_api_key");
+      const llmModel = getConfig("llm_model") || "gpt-4o";
 
-    const systemPrompt = `你是一位专业的文生图提示词工程师。用户会提供一组关键词标签或图片编辑需求，请生成一条高质量的英文提示词。
+      if (!llmApiKey) throw new Error("请先配置 LLM API Key");
+
+      const systemPrompt = `你是一位专业的文生图提示词工程师。用户会提供一组关键词标签或图片编辑需求，请生成一条高质量的英文提示词。
 
 核心规则：
 1. 用英文输出
@@ -69,21 +81,22 @@ ${isImg2img ? "5. 对于图片编辑，明确描述要修改什么、保留什�
 
 输出格式：只输出提示词本身，不要加任何解释、引号、前缀或后缀，不要输出思考过程。`;
 
-    const promptLabel = isImg2img ? "图片编辑需求" : "关键词标签";
-    const userMessage = `${promptLabel}: ${task.keywordNames}。请生成一条专业的提示词，确保包含人体结构正确性要求。`;
+      const promptLabel = isImg2img ? "图片编辑需求" : "关键词标签";
+      const userMessage = `${promptLabel}: ${task.keywordNames}。请生成一条专业的提示词，确保包含人体结构正确性要求。`;
 
-    const promptUrl = llmEndpoint.replace(/\/+$/, "") + "/chat/completions";
-    const promptRes = await fetch(promptUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${llmApiKey}` },
-      body: JSON.stringify({ model: llmModel, messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userMessage }], temperature: 0.8, max_tokens: 2048, thinking: { type: "disabled" } }),
-    });
-    if (!promptRes.ok) throw new Error(`LLM 错误: ${await promptRes.text()}`);
-    const promptData = await promptRes.json();
-    const generatedPrompt = promptData.choices?.[0]?.message?.content?.trim();
-    if (!generatedPrompt) throw new Error("生成提示词失败");
+      const promptUrl = llmEndpoint.replace(/\/+$/, "") + "/chat/completions";
+      const promptRes = await fetch(promptUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${llmApiKey}` },
+        body: JSON.stringify({ model: llmModel, messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userMessage }], temperature: 0.8, max_tokens: 2048, thinking: { type: "disabled" } }),
+      });
+      if (!promptRes.ok) throw new Error(`LLM 错误: ${await promptRes.text()}`);
+      const promptData = await promptRes.json();
+      generatedPrompt = promptData.choices?.[0]?.message?.content?.trim() || "";
+      if (!generatedPrompt) throw new Error("生成提示词失败");
 
-    db.update(tasks).set({ prompt: generatedPrompt, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
+      db.update(tasks).set({ prompt: generatedPrompt, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
+    }
 
     const imgEndpoint = getConfig("image_endpoint") || "https://api.openai.com/v1";
     const imgApiKey = getConfig("image_api_key");
@@ -93,13 +106,18 @@ ${isImg2img ? "5. 对于图片编辑，明确描述要修改什么、保留什�
     if (!imgApiKey) throw new Error("请先配置生图 API Key");
 
     const qualitySuffix = ", perfect anatomy, each body part clearly separated and distinct, no merged limbs, no hands touching legs, no extra appendages, correct number of fingers and toes, natural body proportions, no deformities, professional photography, highly detailed, masterpiece";
-    const finalPrompt = generatedPrompt + qualitySuffix;
+    const img2imgPrefix = isImg2img
+      ? "Use the provided reference image as the primary visual source. Preserve the main subject, identity, pose, composition, camera angle, and overall layout unless explicitly instructed otherwise. "
+      : "";
+    const finalPrompt = img2imgPrefix + generatedPrompt + qualitySuffix;
 
     const imgUrl = imgEndpoint.replace(/\/+$/, "") + "/images/generations";
     const reqBody: Record<string, unknown> = { model: imgModel, prompt: finalPrompt, n: 1, size, extra_body: { response_format: "url" } };
 
     if (isImg2img && task.referenceImage) {
-      (reqBody.extra_body as Record<string, unknown>).image = [task.referenceImage];
+      const referenceImages = parseReferenceImages(task.referenceImage);
+      reqBody.image = referenceImages;
+      (reqBody.extra_body as Record<string, unknown>).image = referenceImages;
     }
 
     const imgRes = await fetch(imgUrl, {
@@ -131,11 +149,12 @@ ${isImg2img ? "5. 对于图片编辑，明确描述要修改什么、保留什�
       keywordNames: task.keywordNames,
       prompt: generatedPrompt,
       imagePath,
+      type: "image",
     }).run();
 
-    db.update(tasks).set({ status: "done", imagePath, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
+    db.update(tasks).set({ status: "done", imagePath, progress: 100, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
   } catch (e) {
-    db.update(tasks).set({ status: "failed", error: (e as Error).message, updatedAt: new Date().toISOString() }).where(eq(tasks.id, taskId)).run();
+    db.update(tasks).set({ status: "failed", progress: 0, error: (e as Error).message, updatedAt: new Date().toISOString() }).where(eq(tasks.id, taskId)).run();
   }
 }
 
@@ -144,7 +163,7 @@ async function processVideoTask(taskId: number, width: number, height: number, n
   try {
     const task = db.select().from(tasks).where(eq(tasks.id, taskId)).get();
     if (!task) return;
-    db.update(tasks).set({ status: "processing", updatedAt: now() }).where(eq(tasks.id, taskId)).run();
+    db.update(tasks).set({ status: "processing", progress: 1, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
 
     const imgEndpoint = getConfig("image_endpoint") || "https://apihub.agnes-ai.com/v1";
     const apiKey = getConfig("image_api_key");
@@ -235,7 +254,7 @@ async function processVideoTask(taskId: number, width: number, height: number, n
     }
     console.log(`[video#${taskId}] 已创建, video_id=${videoId.substring(0, 20)}...`);
 
-    db.update(tasks).set({ videoId, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
+    db.update(tasks).set({ videoId, progress: 2, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
 
     for (let i = 0; i < 360; i++) {
       await new Promise((r) => setTimeout(r, 5000));
@@ -282,9 +301,11 @@ async function processVideoTask(taskId: number, width: number, height: number, n
           keywordNames: task.keywordNames,
           prompt: prompt,
           imagePath: videoPath,
+          type: "video",
+          posterPath,
         }).run();
 
-        db.update(tasks).set({ status: "done", videoPath, posterPath, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
+        db.update(tasks).set({ status: "done", videoPath, posterPath, progress: 100, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
         console.log(`[video#${taskId}] 完成! 文件: ${videoPath}`);
         return;
       }
@@ -292,11 +313,11 @@ async function processVideoTask(taskId: number, width: number, height: number, n
         const errDetail = typeof statusData.error === "object" ? JSON.stringify(statusData.error) : String(statusData.error || "未知错误");
         throw new Error("视频生成失败: " + errDetail);
       }
-      db.update(tasks).set({ updatedAt: now() }).where(eq(tasks.id, taskId)).run();
+      db.update(tasks).set({ progress: Math.max(2, Math.min(Number(progress) || 0, 99)), updatedAt: now() }).where(eq(tasks.id, taskId)).run();
     }
     throw new Error("视频生成超时（30分钟）");
   } catch (e) {
-    db.update(tasks).set({ status: "failed", error: (e as Error).message, updatedAt: new Date().toISOString() }).where(eq(tasks.id, taskId)).run();
+    db.update(tasks).set({ status: "failed", progress: 0, error: (e as Error).message, updatedAt: new Date().toISOString() }).where(eq(tasks.id, taskId)).run();
   }
 }
 
@@ -314,7 +335,7 @@ export async function POST(request: Request) {
       type: taskType,
       keywordNames: keywords || manualPrompt || "",
       prompt: manualPrompt || "",
-      referenceImage: image || "",
+      referenceImage: Array.isArray(image) ? JSON.stringify(image) : image || "",
       size: size || "1024x1024",
     }).returning().get();
 

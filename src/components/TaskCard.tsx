@@ -3,7 +3,7 @@
 interface TaskRecord {
   id: number; status: string; type: string;
   keywordNames: string; prompt: string;
-  imagePath: string; videoPath: string; posterPath: string; error: string;
+  imagePath: string; videoPath: string; posterPath: string; progress: number; error: string;
 }
 
 interface Props {
@@ -31,6 +31,14 @@ export default function TaskCard({ task, onDelete }: Props) {
             <p className="text-xs text-app-text3 text-center">
               {isVideo ? "视频生成中..." : task.status === "pending" ? "排队中..." : "生成中..."}
             </p>
+            {isVideo && task.progress > 0 && (
+              <div className="w-full mt-3">
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
+                  <div className="h-full rounded-full" style={{ width: `${Math.min(task.progress, 100)}%`, background: "var(--accent)" }} />
+                </div>
+                <p className="text-xs text-app-text3 mt-1 text-center opacity-70">{task.progress}%</p>
+              </div>
+            )}
             <p className="text-xs text-app-text3 mt-1 opacity-60">{isVideo ? "约需 3-10 分钟" : "约需 15-60 秒"}</p>
           </>
         )}

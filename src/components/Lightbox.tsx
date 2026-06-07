@@ -111,7 +111,7 @@ export default function Lightbox({ src, alt, keywords, onClose, onDelete }: Prop
               className="flex-1 py-2 text-xs rounded-lg transition"
               style={{ background: "var(--bg-tertiary)", color: "var(--text-primary)" }}
             >
-              下载图片
+              {isVideoFile ? "下载视频" : "下载图片"}
             </button>
             {onDelete && (
               <button

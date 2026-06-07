@@ -32,7 +32,7 @@ function getImageSize(keywords: string[]): string {
 interface TaskRecord {
   id: number; status: string; type: string;
   keywordNames: string; prompt: string;
-  imagePath: string; videoPath: string; posterPath: string; error: string;
+  imagePath: string; videoPath: string; posterPath: string; progress: number; error: string;
 }
 
 export default function HomePage() {
@@ -45,6 +45,7 @@ export default function HomePage() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [mode, setMode] = useState<"keywords" | "manual" | "img2img" | "video">("keywords");
   const [refImage, setRefImage] = useState("");
+  const [refImages, setRefImages] = useState<string[]>([]);
   const [videoWidth, setVideoWidth] = useState(1920);
   const [videoHeight, setVideoHeight] = useState(1080);
   const [videoFrames, setVideoFrames] = useState(121);
@@ -74,7 +75,8 @@ export default function HomePage() {
         if (data.success) {
           setLiveTasks(data.data);
           const active = data.data.filter((t: TaskRecord) => t.status === "pending" || t.status === "processing");
-          if (active.length === 0) { emptyCount++; if (emptyCount >= 3 && pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; fetchHistory(); } }
+          fetchHistory();
+          if (active.length === 0) { emptyCount++; if (emptyCount >= 1 && pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; } }
           else { emptyCount = 0; }
         }
       } catch {}
@@ -119,15 +121,20 @@ export default function HomePage() {
 
     if (mode === "keywords" || mode === "img2img") {
       if (mode === "keywords" && selected.length === 0) { alert("请至少选择一个关键词"); return; }
+      if (mode === "img2img" && selected.length === 0 && !prompt.trim()) { alert("请至少选择关键词或输入编辑指令"); return; }
       body.keywords = selected.join(", ");
       body.size = getImageSize(selected);
+      if (mode === "img2img" && prompt.trim()) body.prompt = prompt.trim();
     } else if (mode === "manual" || mode === "video") {
       if (!prompt.trim()) { alert("请输入提示词"); return; }
       body.keywords = prompt.trim();
       body.prompt = prompt.trim();
     }
 
-    if ((mode === "img2img" || mode === "video") && refImage) {
+    if (mode === "img2img") {
+      if (refImages.length === 0) { alert("请至少添加一张参考图"); return; }
+      body.image = refImages;
+    } else if (mode === "video" && refImage) {
       body.image = refImage;
     }
 
@@ -136,7 +143,7 @@ export default function HomePage() {
       const res = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!data.success) { alert(data.error || "创建失败"); return; }
-      setLiveTasks(prev => [...prev, { id: data.data.taskId, status: "pending", type: mode, keywordNames: mode === "keywords" ? selected.join(", ") : "手动输入", prompt: (body.prompt as string) || "", imagePath: "", videoPath: "", posterPath: "", error: "" }]);
+      setLiveTasks(prev => [...prev, { id: data.data.taskId, status: "pending", type: mode, keywordNames: mode === "keywords" ? selected.join(", ") : "手动输入", prompt: (body.prompt as string) || "", imagePath: "", videoPath: "", posterPath: "", progress: 0, error: "" }]);
       startPolling();
     } catch { alert("创建失败"); }
     finally { setLoading(false); setStatusText(""); }
@@ -197,7 +204,7 @@ export default function HomePage() {
               </h2>
               {mode === "img2img" && (
                 <div className="mb-4">
-                  <ImageUploader image={refImage} onChange={setRefImage} />
+                  <ImageUploader images={refImages} onChange={setRefImages} />
                 </div>
               )}
               <KeywordSelector groups={groups} selected={selected} onToggle={toggleKeyword} />

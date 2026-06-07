@@ -8,7 +8,7 @@ import TaskCard from "./TaskCard";
 interface TaskRecord {
   id: number; status: string; type: string;
   keywordNames: string; prompt: string;
-  imagePath: string; videoPath: string; posterPath: string; error: string;
+  imagePath: string; videoPath: string; posterPath: string; progress: number; error: string;
 }
 
 type SortOrder = "newest" | "oldest";
@@ -21,15 +21,15 @@ interface Props {
   onDeleteTask: (id: number) => void;
 }
 
-function isVideo(path: string) { return /\.(mp4|webm|mov)$/i.test(path); }
+function isVideo(record: ImageRecord) { return record.type === "video" || /\.(mp4|webm|mov)$/i.test(record.imagePath); }
 
 export default function MasonryGallery({ records, liveTasks, onDelete, onDeleteTask }: Props) {
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [filterType, setFilterType] = useState<FilterType>("all");
 
   const filtered = records.filter((r) => {
-    if (filterType === "image") return !isVideo(r.imagePath);
-    if (filterType === "video") return isVideo(r.imagePath);
+    if (filterType === "image") return !isVideo(r);
+    if (filterType === "video") return isVideo(r);
     return true;
   });
 
@@ -39,8 +39,8 @@ export default function MasonryGallery({ records, liveTasks, onDelete, onDeleteT
     return sortOrder === "newest" ? tb - ta : ta - tb;
   });
 
-  const imageCount = records.filter((r) => !isVideo(r.imagePath)).length;
-  const videoCount = records.filter((r) => isVideo(r.imagePath)).length;
+  const imageCount = records.filter((r) => !isVideo(r)).length;
+  const videoCount = records.filter((r) => isVideo(r)).length;
 
   if (records.length === 0 && liveTasks.length === 0) {
     return (
