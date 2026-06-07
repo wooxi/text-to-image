@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { keywordGroups, keywords } from "@/lib/db/schema";
+import { config, keywordGroups, keywords } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { defaultKeywordGroups, legacyKeywordGroupSlugs, legacyOnlyKeywordGroupSlugs } from "@/lib/keyword-presets";
+import { defaultKeywordGroups, keywordSyncVersion, legacyKeywordGroupSlugs, legacyOnlyKeywordGroupSlugs } from "@/lib/keyword-presets";
 
 const managedKeywordGroupSlugs = defaultKeywordGroups.map((group) => group.slug);
 const replaceableKeywordGroupSlugs = Array.from(new Set([...legacyKeywordGroupSlugs, ...legacyOnlyKeywordGroupSlugs, ...managedKeywordGroupSlugs]));
@@ -22,13 +22,16 @@ function syncDefaultKeywordGroups() {
   const existingSlugs = new Set(groups.map((group) => group.slug));
   const hasLegacyOnlyGroups = legacyOnlyKeywordGroupSlugs.some((slug) => existingSlugs.has(slug));
   const missingManagedGroups = managedKeywordGroupSlugs.some((slug) => !existingSlugs.has(slug));
+  const syncVersion = db.select().from(config).where(eq(config.key, "keyword_sync_version")).get();
+  const needsVersionSync = (syncVersion?.value || "0") !== String(keywordSyncVersion);
 
   if (groups.length === 0) {
     insertDefaultKeywordGroups();
+    db.insert(config).values({ key: "keyword_sync_version", value: String(keywordSyncVersion) }).onConflictDoUpdate({ target: config.key, set: { value: String(keywordSyncVersion), updatedAt: new Date().toISOString() } }).run();
     return;
   }
 
-  if (!hasLegacyOnlyGroups && !missingManagedGroups) return;
+  if (!hasLegacyOnlyGroups && !missingManagedGroups && !needsVersionSync) return;
 
   for (const group of groups) {
     if (replaceableKeywordGroupSlugs.includes(group.slug)) {
@@ -38,6 +41,7 @@ function syncDefaultKeywordGroups() {
   }
 
   insertDefaultKeywordGroups();
+  db.insert(config).values({ key: "keyword_sync_version", value: String(keywordSyncVersion) }).onConflictDoUpdate({ target: config.key, set: { value: String(keywordSyncVersion), updatedAt: new Date().toISOString() } }).run();
 }
 
 export async function GET() {

@@ -7,6 +7,7 @@ export interface KeywordPresetGroup {
 
 export const legacyKeywordGroupSlugs = ["scene", "character", "style", "lighting", "composition"];
 export const legacyOnlyKeywordGroupSlugs = ["character", "style", "clothing", "body-part"];
+export const keywordSyncVersion = 2;
 
 export const defaultKeywordGroups: KeywordPresetGroup[] = [
   {
@@ -58,10 +59,16 @@ export const defaultKeywordGroups: KeywordPresetGroup[] = [
     keywords: ["清新通透", "电影感", "安静松弛", "浪漫氛围", "高级冷调", "温暖治愈", "都市感", "故事感", "氛围感大片", "清冷疏离", "少女感", "复古情绪"],
   },
   {
+    slug: "clothing",
+    name: "服饰单品",
+    description: "这组直接选具体衣服和配件，模型会更明确地理解人物穿什么，而不是只给模糊风格。",
+    keywords: ["短袖T恤", "长袖T恤", "白衬衫", "条纹衬衫", "针织衫", "卫衣", "西装外套", "风衣", "皮衣", "牛仔外套", "吊带", "背心", "连衣裙", "半身裙", "短裙", "百褶裙", "短裤", "牛仔裤", "阔腿裤", "西装裤", "丝袜", "黑丝", "白丝袜", "长筒袜", "高跟鞋", "长靴", "运动鞋", "帆布鞋", "耳环", "项链"],
+  },
+  {
     slug: "styling",
-    name: "造型与质感",
-    description: "这组词负责服装、妆面和成片质感，适合最后补充人物风格和商业感。",
-    keywords: ["极简穿搭", "通勤造型", "复古穿搭", "礼服造型", "西装造型", "风衣造型", "针织上衣", "连衣裙", "衬衫叠穿", "运动套装", "牛仔质感", "皮衣造型", "高跟鞋", "长靴", "日系妆面", "欧美妆感", "裸感底妆", "红唇妆面", "胶片颗粒", "高质感商业修图"],
+    name: "妆面与质感",
+    description: "这组用来补充妆面、发型和后期质感，让模型把人物完成度和商业感再往上收一步。",
+    keywords: ["日系妆面", "欧美妆感", "裸感底妆", "红唇妆面", "清透妆感", "湿发造型", "高马尾", "黑长直", "胶片颗粒", "高质感商业修图", "低饱和色调", "高清皮肤质感"],
   },
   {
     slug: "detail",
