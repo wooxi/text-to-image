@@ -186,12 +186,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      data: {
-        chinese,
-        english,
-        chineseLength: chinese.length,
-        englishLength: english.split(/\s+/).length,
-      },
+      data: { prompt: english || raw },
     });
   } catch (e) {
     if ((e as Error).message === "Unauthorized") {
