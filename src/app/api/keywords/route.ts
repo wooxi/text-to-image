@@ -25,7 +25,7 @@ function insertKeywordGroup(group: (typeof defaultKeywordGroups)[number]) {
 function syncDefaultKeywordGroups() {
   const groups = db.select().from(keywordGroups).all();
   const existingSlugs = new Set(groups.map((group) => group.slug));
-  const hasLegacyOnlyGroups = legacyOnlyKeywordGroupSlugs.some((slug) => existingSlugs.has(slug));
+  const hasLegacyOnlyGroups = groups.some((group) => legacyOnlyKeywordGroupSlugs.includes(group.slug) && !managedKeywordGroupSlugs.includes(group.slug));
   const missingManagedGroups = managedKeywordGroupSlugs.some((slug) => !existingSlugs.has(slug));
   const syncVersion = db.select().from(config).where(eq(config.key, "keyword_sync_version")).get();
   const needsVersionSync = (syncVersion?.value || "0") !== String(keywordSyncVersion);
