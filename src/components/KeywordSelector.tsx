@@ -50,7 +50,7 @@ export default function KeywordSelector({ groups, selected, onToggle, onClear }:
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
         {filteredGroups.map((group) => {
           const selectedCount = group.keywords.filter((kw) => selected.includes(kw.name)).length;
           return (

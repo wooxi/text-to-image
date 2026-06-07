@@ -193,7 +193,7 @@ export default function HomePage() {
       <Header />
 
       <section className="w-full border-b border-app-border bg-app-bg3/30">
-        <div className="mx-auto max-w-[96rem] px-4 sm:px-6 h-auto min-h-10 py-2 flex items-center gap-4 overflow-x-auto text-xs text-app-text3">
+        <div className="mx-auto max-w-[120rem] 2xl:max-w-[138rem] px-4 sm:px-6 xl:px-8 2xl:px-10 h-auto min-h-10 py-2 flex items-center gap-4 overflow-x-auto text-xs text-app-text3">
           <span className="whitespace-nowrap"><span className="text-app-text2">模式</span> {currentMode?.label}</span>
           <span className="h-4 w-px bg-app-border flex-shrink-0" />
           <span className="whitespace-nowrap"><span className="text-app-text2">输出</span> {mode === "video" ? `${videoWidth}x${videoHeight}` : outputSize || "待选择"}</span>
@@ -204,7 +204,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <main className="mx-auto max-w-[96rem] px-4 sm:px-6 py-6">
+      <main className="mx-auto max-w-[120rem] 2xl:max-w-[138rem] px-4 sm:px-6 xl:px-8 2xl:px-10 py-6">
         {!loggedIn && (
           <div className="mb-6 px-4 py-3 rounded-lg text-sm flex items-center justify-between border border-app-border shadow-sm" style={{ background: "var(--accent-light)", color: "var(--accent)" }}>
             <span>请先登录后才能生成</span>
@@ -212,8 +212,8 @@ export default function HomePage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-          <section className="lg:col-span-9 min-w-0 space-y-6">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 xl:gap-8 2xl:gap-10 items-start">
+          <section className="xl:col-span-9 2xl:col-span-10 min-w-0 space-y-6">
             <section className="border border-app-border bg-app-bg2 rounded-lg shadow-sm p-1">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
                 {tabs.map((tab) => (
@@ -439,7 +439,7 @@ export default function HomePage() {
             </section>
           </section>
 
-          <aside className="lg:col-span-3 lg:sticky lg:top-4 h-fit border border-app-border bg-app-bg2 rounded-lg shadow-sm overflow-hidden">
+          <aside className="xl:col-span-3 2xl:col-span-2 xl:sticky xl:top-4 h-fit border border-app-border bg-app-bg2 rounded-lg shadow-sm overflow-hidden">
             <div className="px-4 py-3 border-b border-app-border flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold text-app-text">任务队列</h2>

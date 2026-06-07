@@ -3,40 +3,41 @@ import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { keywordGroups, keywords } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { defaultKeywordGroups, legacyKeywordGroupSlugs } from "@/lib/keyword-presets";
+import { defaultKeywordGroups, legacyKeywordGroupSlugs, legacyOnlyKeywordGroupSlugs } from "@/lib/keyword-presets";
 
-function syncDefaultKeywordGroups() {
-  const groups = db.select().from(keywordGroups).all();
-  const existingSlugs = new Set(groups.map((group) => group.slug));
-  const hasLegacyDefaults = legacyKeywordGroupSlugs.some((slug) => existingSlugs.has(slug));
-  const hasLegacyOnlyGroups = ["character", "style"].some((slug) => existingSlugs.has(slug));
-  const hasAnyDefaultGroup = defaultKeywordGroups.some((group) => existingSlugs.has(group.slug));
+const managedKeywordGroupSlugs = defaultKeywordGroups.map((group) => group.slug);
+const replaceableKeywordGroupSlugs = Array.from(new Set([...legacyKeywordGroupSlugs, ...legacyOnlyKeywordGroupSlugs, ...managedKeywordGroupSlugs]));
 
-  if (groups.length === 0) {
-    for (const group of defaultKeywordGroups) {
-      const inserted = db.insert(keywordGroups).values({ name: group.name, slug: group.slug }).returning().get();
-      for (const keyword of group.keywords) {
-        db.insert(keywords).values({ groupId: inserted.id, name: keyword }).run();
-      }
-    }
-    return;
-  }
-
-  if (!hasLegacyOnlyGroups || !hasLegacyDefaults || !hasAnyDefaultGroup) return;
-
-  for (const group of groups) {
-    if (legacyKeywordGroupSlugs.includes(group.slug)) {
-      db.delete(keywords).where(eq(keywords.groupId, group.id)).run();
-      db.delete(keywordGroups).where(eq(keywordGroups.id, group.id)).run();
-    }
-  }
-
+function insertDefaultKeywordGroups() {
   for (const group of defaultKeywordGroups) {
     const inserted = db.insert(keywordGroups).values({ name: group.name, slug: group.slug }).returning().get();
     for (const keyword of group.keywords) {
       db.insert(keywords).values({ groupId: inserted.id, name: keyword }).run();
     }
   }
+}
+
+function syncDefaultKeywordGroups() {
+  const groups = db.select().from(keywordGroups).all();
+  const existingSlugs = new Set(groups.map((group) => group.slug));
+  const hasLegacyOnlyGroups = legacyOnlyKeywordGroupSlugs.some((slug) => existingSlugs.has(slug));
+  const missingManagedGroups = managedKeywordGroupSlugs.some((slug) => !existingSlugs.has(slug));
+
+  if (groups.length === 0) {
+    insertDefaultKeywordGroups();
+    return;
+  }
+
+  if (!hasLegacyOnlyGroups && !missingManagedGroups) return;
+
+  for (const group of groups) {
+    if (replaceableKeywordGroupSlugs.includes(group.slug)) {
+      db.delete(keywords).where(eq(keywords.groupId, group.id)).run();
+      db.delete(keywordGroups).where(eq(keywordGroups.id, group.id)).run();
+    }
+  }
+
+  insertDefaultKeywordGroups();
 }
 
 export async function GET() {
