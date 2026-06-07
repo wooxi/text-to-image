@@ -96,6 +96,8 @@ export default function HomePage() {
     setSelected(prev => prev.includes(keyword) ? prev.filter(k => k !== keyword) : [...prev, keyword]);
   };
 
+  const clearSelectedKeywords = () => setSelected([]);
+
   const handleGeneratePrompt = async () => {
     if (selected.length === 0) { alert("请至少选择一个关键词"); return; }
     if (!loggedIn) { alert("请先登录"); return; }
@@ -173,183 +175,314 @@ export default function HomePage() {
   };
 
   const tabs = [
-    { key: "keywords", label: "关键词组合" },
-    { key: "manual", label: "手动输入" },
-    { key: "img2img", label: "参考图生图" },
-    { key: "video", label: "视频生成" },
+    { key: "keywords", label: "关键词生图", desc: "标签组合生成提示词" },
+    { key: "manual", label: "手动生图", desc: "直接输入完整提示词" },
+    { key: "img2img", label: "参考图生图", desc: "上传或粘贴参考图" },
+    { key: "video", label: "视频生成", desc: "文生视频/图生视频/关键帧" },
   ] as const;
 
+  const activeTasks = liveTasks.filter((task) => task.status === "pending" || task.status === "processing");
+  const failedTasks = liveTasks.filter((task) => task.status === "failed");
+  const currentMode = tabs.find((tab) => tab.key === mode);
+  const outputSize = selected.length > 0 && (mode === "keywords" || mode === "img2img") ? getImageSize(selected) : null;
+  const videoDuration = (videoFrames / videoFps).toFixed(1);
+  const queueTasks = [...activeTasks, ...failedTasks];
+
   return (
-    <div className="min-h-screen bg-app-bg">
+    <div className="min-h-screen bg-app-bg text-app-text">
       <Header />
-      <main className="max-w-[90rem] mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
+
+      <section className="w-full border-b border-app-border bg-app-bg3/30">
+        <div className="mx-auto max-w-[96rem] px-4 sm:px-6 h-auto min-h-10 py-2 flex items-center gap-4 overflow-x-auto text-xs text-app-text3">
+          <span className="whitespace-nowrap"><span className="text-app-text2">模式</span> {currentMode?.label}</span>
+          <span className="h-4 w-px bg-app-border flex-shrink-0" />
+          <span className="whitespace-nowrap"><span className="text-app-text2">输出</span> {mode === "video" ? `${videoWidth}x${videoHeight}` : outputSize || "待选择"}</span>
+          <span className="h-4 w-px bg-app-border flex-shrink-0" />
+          <span className="whitespace-nowrap"><span className="text-app-text2">队列</span> {activeTasks.length} 进行中 / {failedTasks.length} 失败</span>
+          <span className="h-4 w-px bg-app-border flex-shrink-0" />
+          <span className="whitespace-nowrap"><span className="text-app-text2">作品</span> {records.length}</span>
+        </div>
+      </section>
+
+      <main className="mx-auto max-w-[96rem] px-4 sm:px-6 py-6">
         {!loggedIn && (
-          <div className="mb-4 sm:mb-6 px-4 py-3 rounded-xl text-sm flex items-center justify-between" style={{ background: "var(--accent-light)", color: "var(--accent)" }}>
+          <div className="mb-6 px-4 py-3 rounded-lg text-sm flex items-center justify-between border border-app-border shadow-sm" style={{ background: "var(--accent-light)", color: "var(--accent)" }}>
             <span>请先登录后才能生成</span>
-            <Link href="/admin/login" className="px-4 py-1.5 bg-[var(--accent)] text-white rounded-lg text-xs hover:opacity-90 transition flex-shrink-0 ml-3">去登录</Link>
+            <Link href="/admin/login" className="px-4 py-1.5 bg-[var(--accent)] text-white rounded-md text-xs hover:opacity-90 transition flex-shrink-0 ml-3">去登录</Link>
           </div>
         )}
 
-        <div className="bg-app-bg2 border border-app-border rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8">
-          <div className="flex gap-1 mb-4 bg-app-bg rounded-lg p-1 flex-wrap">
-            {tabs.map(t => (
-              <button key={t.key} onClick={() => setMode(t.key)} className="py-2 px-3 rounded-md text-sm font-medium transition"
-                style={{ background: mode === t.key ? "var(--accent)" : "transparent", color: mode === t.key ? "#fff" : "var(--text-secondary)" }}>
-                {t.label}
-              </button>
-            ))}
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+          <section className="lg:col-span-9 min-w-0 space-y-6">
+            <section className="border border-app-border bg-app-bg2 rounded-lg shadow-sm p-1">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setMode(tab.key)}
+                    className="rounded-md px-3 py-2.5 text-left transition"
+                    style={{
+                      background: mode === tab.key ? "var(--bg-primary)" : "transparent",
+                      color: mode === tab.key ? "var(--text-primary)" : "var(--text-secondary)",
+                      boxShadow: mode === tab.key ? "0 1px 2px rgba(0,0,0,0.08)" : "none",
+                    }}
+                  >
+                    <div className="text-sm font-semibold truncate">{tab.label}</div>
+                    <div className="mt-0.5 hidden sm:block text-xs opacity-70 truncate">{tab.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </section>
 
-          {(mode === "keywords" || mode === "img2img") && (
-            <>
-              <h2 className="text-base sm:text-lg font-semibold text-app-text mb-3 sm:mb-4">
-                {mode === "img2img" ? "上传参考图" : "选择关键词"}
-              </h2>
-              {mode === "img2img" && (
-                <div className="mb-4">
-                  <ImageUploader images={refImages} onChange={setRefImages} />
+            {(mode === "keywords" || mode === "img2img") && (
+              <section className="border border-app-border bg-app-bg2 rounded-lg shadow-sm overflow-hidden">
+                <div className="px-4 sm:px-6 py-4 border-b border-app-border flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-semibold text-app-text">参数配置</h2>
+                    <p className="mt-1 text-xs text-app-text3">选择关键词，必要时添加参考图。</p>
+                  </div>
+                  <span className="text-xs text-app-text3 flex-shrink-0">{selected.length} 已选</span>
                 </div>
-              )}
-              <KeywordSelector groups={groups} selected={selected} onToggle={toggleKeyword} />
-              {selected.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2 items-center">
-                  <span className="text-sm text-app-text3">已选:</span>
-                  {selected.map(k => (<span key={k} className="px-2 py-0.5 rounded bg-[var(--accent-light)] text-[var(--accent)] text-xs">{k}</span>))}
-                  <span className="text-xs text-app-text3 ml-2">输出: {getImageSize(selected)}</span>
-                </div>
-              )}
-              {mode === "keywords" && (
-                <button onClick={handleGeneratePrompt} disabled={loading || selected.length === 0 || !loggedIn}
-                  className="mt-4 w-full py-2.5 sm:py-3 text-white font-medium rounded-xl transition text-base sm:text-lg"
-                  style={{ background: loading || !loggedIn ? "var(--bg-tertiary)" : "var(--accent)", color: loading || !loggedIn ? "var(--text-muted)" : "#fff" }}>
-                  {loading ? statusText : "生成提示词"}
-                </button>
-              )}
-            </>
-          )}
+                <div className="p-4 sm:p-6 space-y-6">
+                  {mode === "img2img" && (
+                    <div>
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <label className="text-sm font-medium text-app-text">参考图</label>
+                        <span className="text-xs text-app-text3">{refImages.length} 张</span>
+                      </div>
+                      <ImageUploader images={refImages} onChange={setRefImages} />
+                    </div>
+                  )}
 
-          {mode === "video" && (
-            <div className="space-y-3">
-              <h2 className="text-base sm:text-lg font-semibold text-app-text">视频生成</h2>
-              <div>
-                <label className="text-xs text-app-text3">视频工作流</label>
-                <div className="mt-1 flex gap-1 bg-app-bg rounded-lg p-1">
-                  {([
-                    ["reference", "参考图/多图"],
-                    ["keyframes", "关键帧动画"],
-                  ] as ["reference" | "keyframes", string][]).map(([key, label]) => (
-                    <button key={key} type="button" onClick={() => setVideoMode(key)}
-                      className="flex-1 py-1.5 px-2 rounded-md text-xs font-medium transition"
-                      style={{ background: videoMode === key ? "var(--accent)" : "transparent", color: videoMode === key ? "#fff" : "var(--text-secondary)" }}>
-                      {label}
+                  <div>
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <label className="text-sm font-medium text-app-text">关键词</label>
+                      {outputSize && <span className="text-xs text-app-text3">{outputSize}</span>}
+                    </div>
+                    <KeywordSelector groups={groups} selected={selected} onToggle={toggleKeyword} onClear={clearSelectedKeywords} />
+                    {selected.length > 0 && (
+                      <div className="mt-4 rounded-xl border border-app-border bg-app-bg p-4">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <div>
+                            <h3 className="text-sm font-semibold text-app-text">已选关键词</h3>
+                            <p className="mt-1 text-xs text-app-text3">这些词会组合成提示词基础方向。</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={clearSelectedKeywords}
+                            className="rounded-md border border-app-border bg-app-bg2 px-3 py-1.5 text-xs text-app-text2 transition hover:text-app-text"
+                          >
+                            清空已选
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                        {selected.map((keyword) => (
+                          <button
+                            key={keyword}
+                            type="button"
+                            onClick={() => toggleKeyword(keyword)}
+                            className="rounded-full border border-[var(--accent)] bg-[var(--accent-light)] px-3 py-1.5 text-xs text-[var(--accent)] transition hover:opacity-90"
+                          >
+                            {keyword}
+                          </button>
+                        ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {mode === "video" && (
+              <section className="border border-app-border bg-app-bg2 rounded-lg shadow-sm overflow-hidden">
+                <div className="px-4 sm:px-6 py-4 border-b border-app-border flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-semibold text-app-text">视频配置</h2>
+                    <p className="mt-1 text-xs text-app-text3">配置参考图、关键帧和输出参数。</p>
+                  </div>
+                  <span className="text-xs text-app-text3 flex-shrink-0">约 {videoDuration} 秒</span>
+                </div>
+                <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-2 rounded-lg border border-app-border bg-app-bg p-1">
+                      {([
+                        ["reference", "参考图/多图"],
+                        ["keyframes", "关键帧动画"],
+                      ] as ["reference" | "keyframes", string][]).map(([key, label]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setVideoMode(key)}
+                          className="rounded-md px-3 py-2 text-xs font-semibold transition"
+                          style={{ background: videoMode === key ? "var(--bg-secondary)" : "transparent", color: videoMode === key ? "var(--text-primary)" : "var(--text-secondary)", boxShadow: videoMode === key ? "0 1px 2px rgba(0,0,0,0.08)" : "none" }}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <div>
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <label className="text-sm font-medium text-app-text">参考图 URL</label>
+                        <span className="text-xs text-app-text3">{videoRefImages.length} 条</span>
+                      </div>
+                      <ImageUploader images={videoRefImages} onChange={setVideoRefImages} allowUpload={false} allowDataUri={false} hint="视频参考图仅支持公网 URL" />
+                      <p className="mt-3 text-xs text-app-text3">
+                        {videoRefImages.length === 0
+                          ? "不添加参考图时按文本生成视频。"
+                          : videoMode === "keyframes"
+                            ? "关键帧动画至少需要两张公网图片 URL。"
+                            : "一张或多张公网图片会约束主体、构图和风格。"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-app-border bg-app-bg p-4">
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div>
+                        <h3 className="text-sm font-semibold text-app-text">输出参数</h3>
+                        <p className="mt-1 text-xs text-app-text3">{videoWidth}x{videoHeight} · {videoFrames} 帧 · {videoFps}fps</p>
+                      </div>
+                      <span className="rounded-md bg-[var(--accent-light)] px-2 py-1 text-xs text-[var(--accent)]">{videoDuration}s</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-app-text3">宽度</label>
+                        <select value={videoWidth} onChange={e => setVideoWidth(Number(e.target.value))} className="w-full mt-1 px-2 py-2 bg-app-bg2 border border-app-border rounded-md text-xs text-app-text focus:outline-none">
+                          <option value={768}>768</option><option value={1080}>1080</option><option value={1152}>1152</option><option value={1920}>1920</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-app-text3">高度</label>
+                        <select value={videoHeight} onChange={e => setVideoHeight(Number(e.target.value))} className="w-full mt-1 px-2 py-2 bg-app-bg2 border border-app-border rounded-md text-xs text-app-text focus:outline-none">
+                          <option value={576}>576</option><option value={768}>768</option><option value={1080}>1080</option><option value={1152}>1152</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-app-text3">帧数</label>
+                        <select value={videoFrames} onChange={e => setVideoFrames(Number(e.target.value))} className="w-full mt-1 px-2 py-2 bg-app-bg2 border border-app-border rounded-md text-xs text-app-text focus:outline-none">
+                          <option value={81}>81 (3.4s)</option><option value={121}>121 (5s)</option><option value={201}>201 (8.4s)</option><option value={401}>401 (16.7s)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-app-text3">帧率</label>
+                        <select value={videoFps} onChange={e => setVideoFps(Number(e.target.value))} className="w-full mt-1 px-2 py-2 bg-app-bg2 border border-app-border rounded-md text-xs text-app-text focus:outline-none">
+                          <option value={8}>8 fps</option><option value={16}>16 fps</option><option value={24}>24 fps</option><option value={30}>30 fps</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            <section className="border border-app-border bg-app-bg2 rounded-lg shadow-sm overflow-hidden focus-within:border-app-border-hover transition-colors">
+              <div className="px-4 sm:px-6 py-4 border-b border-app-border flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-semibold text-app-text">{mode === "video" ? "画面描述" : mode === "img2img" ? "编辑指令" : "提示词控制台"}</h2>
+                  <p className="mt-1 text-xs text-app-text3">{mode === "keywords" ? "先生成提示词，也可以直接编辑后生成。" : currentMode?.desc}</p>
+                </div>
+                <span className="text-xs text-app-text3 flex-shrink-0">{prompt.length} 字符</span>
+              </div>
+              <textarea
+                value={prompt}
+                onChange={e => setPrompt(e.target.value)}
+                rows={mode === "video" ? 10 : 8}
+                className="block w-full min-h-[180px] lg:min-h-[240px] 2xl:min-h-[300px] resize-y bg-transparent px-4 sm:px-6 py-4 text-base leading-7 text-app-text placeholder:text-app-text3 focus:outline-none"
+                placeholder={mode === "video" ? "描述画面、主体动作、镜头运动和氛围..." : mode === "img2img" ? "输入要保留或修改的内容..." : "输入完整提示词..."}
+              />
+              <div className="border-t border-app-border px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-app-bg3/30">
+                <div className="flex flex-wrap items-center gap-3 text-xs text-app-text3">
+                  <span>{prompt.length} 字符</span>
+                  <span className="h-3 w-px bg-app-border" />
+                  <span>{mode === "video" ? `${videoWidth}x${videoHeight} · ${videoDuration}s` : outputSize || "默认 1024x1024"}</span>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                  {mode === "keywords" && (
+                    <button
+                      onClick={handleGeneratePrompt}
+                      disabled={loading || selected.length === 0 || !loggedIn}
+                      className="rounded-md border border-app-border bg-app-bg2 px-4 py-2 text-sm font-medium text-app-text2 transition hover:text-app-text disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {loading && statusText === "正在生成提示词..." ? "生成中" : "生成提示词"}
                     </button>
-                  ))}
+                  )}
+                  <button
+                    onClick={handlePolish}
+                    disabled={loading || !prompt.trim()}
+                    className="rounded-md border border-app-border bg-app-bg2 px-4 py-2 text-sm font-medium text-app-text2 transition hover:text-app-text disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {loading && statusText === "AI 润色中..." ? "润色中" : "AI 润色"}
+                  </button>
+                  <button
+                    onClick={handleGenerate}
+                    disabled={loading || !loggedIn || (!prompt.trim() && mode !== "img2img")}
+                    className="rounded-md px-5 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{ background: loading || !loggedIn ? "var(--bg-tertiary)" : "var(--accent)", color: loading || !loggedIn ? "var(--text-muted)" : "#fff" }}
+                  >
+                    {!loggedIn ? "请先登录" : loading && statusText !== "AI 润色中..." && statusText !== "正在生成提示词..." ? statusText : mode === "video" ? "生成视频" : "生成图片"}
+                  </button>
                 </div>
               </div>
+            </section>
+
+            <section>
+              <div className="flex items-end justify-between gap-3 mb-4 border-b border-app-border pb-3">
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.18em] text-app-text3">Gallery</div>
+                  <h2 className="mt-1 text-lg sm:text-xl font-semibold text-app-text">生成结果</h2>
+                </div>
+                <span className="text-xs text-app-text3">{records.length} 个作品</span>
+              </div>
+              <MasonryGallery records={records} liveTasks={[]} onDelete={handleDeleteHistory} onDeleteTask={handleDeleteTask} />
+            </section>
+          </section>
+
+          <aside className="lg:col-span-3 lg:sticky lg:top-4 h-fit border border-app-border bg-app-bg2 rounded-lg shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-app-border flex items-center justify-between gap-3">
               <div>
-                <label className="text-xs text-app-text3">参考图 URL（可选）</label>
-                <div className="mt-1">
-                  <ImageUploader images={videoRefImages} onChange={setVideoRefImages} allowUpload={false} allowDataUri={false} />
-                </div>
+                <h2 className="text-sm font-semibold text-app-text">任务队列</h2>
+                <p className="mt-0.5 text-xs text-app-text3">Task Queue</p>
               </div>
-              <p className="text-xs text-app-text3">
-                {videoRefImages.length === 0
-                  ? "文生视频：不添加参考图时，仅根据画面描述生成"
-                  : videoMode === "keyframes"
-                    ? "关键帧动画：用多张图片生成平滑转场"
-                    : "参考图/多图视频：用一张或多张公网图片约束主体和风格"}
-              </p>
-
-              <div className="relative">
-                <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3}
-                  className="w-full px-3 py-2.5 pr-20 bg-app-bg border border-app-border rounded-xl text-sm text-app-text leading-relaxed resize-y focus:outline-none"
-                  placeholder="描述视频画面动作，如：一位古风美女在樱花树下转身回眸，微风吹动发丝和裙摆，镜头从侧面缓缓推近，电影感运镜..." />
-                <button onClick={handlePolish} disabled={loading || !prompt.trim()}
-                  className="absolute bottom-2 right-2 px-3 py-1 text-xs rounded-lg transition text-white"
-                  style={{ background: loading || !prompt.trim() ? "var(--bg-tertiary)" : "var(--accent)", color: loading || !prompt.trim() ? "var(--text-muted)" : "#fff" }}>
-                  {loading && statusText === "AI 润色中..." ? "..." : "AI 润色"}
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <div>
-                  <label className="text-xs text-app-text3">宽度</label>
-                  <select value={videoWidth} onChange={e => setVideoWidth(Number(e.target.value))}
-                    className="w-full mt-1 px-2 py-1.5 bg-app-bg border border-app-border rounded-lg text-xs text-app-text focus:outline-none">
-                    <option value={768}>768</option><option value={1080}>1080</option><option value={1152}>1152</option><option value={1920}>1920</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-app-text3">高度</label>
-                  <select value={videoHeight} onChange={e => setVideoHeight(Number(e.target.value))}
-                    className="w-full mt-1 px-2 py-1.5 bg-app-bg border border-app-border rounded-lg text-xs text-app-text focus:outline-none">
-                    <option value={576}>576</option><option value={768}>768</option><option value={1080}>1080</option><option value={1152}>1152</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-app-text3">帧数 <span className="opacity-50">(8n+1)</span></label>
-                  <select value={videoFrames} onChange={e => setVideoFrames(Number(e.target.value))}
-                    className="w-full mt-1 px-2 py-1.5 bg-app-bg border border-app-border rounded-lg text-xs text-app-text focus:outline-none">
-                    <option value={81}>81 (3.4s)</option><option value={121}>121 (5s)</option><option value={201}>201 (8.4s)</option><option value={401}>401 (16.7s)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-app-text3">帧率</label>
-                  <select value={videoFps} onChange={e => setVideoFps(Number(e.target.value))}
-                    className="w-full mt-1 px-2 py-1.5 bg-app-bg border border-app-border rounded-lg text-xs text-app-text focus:outline-none">
-                    <option value={8}>8 fps</option><option value={16}>16 fps</option><option value={24}>24 fps</option><option value={30}>30 fps</option>
-                  </select>
-                </div>
-              </div>
-              <p className="text-xs text-app-text3">
-                分辨率: {videoWidth}x{videoHeight} · {videoFrames}帧/{videoFps}fps ≈ {(videoFrames/videoFps).toFixed(1)}秒
-              </p>
+              <span className="text-xs text-app-text3 flex-shrink-0">{queueTasks.length}</span>
             </div>
-          )}
 
-          {mode === "manual" && (
-            <div>
-              <h2 className="text-base sm:text-lg font-semibold text-app-text mb-3">手动输入提示词</h2>
-              <p className="text-xs text-app-text3 mb-2">直接输入文生图提示词（英文效果更好）</p>
-            </div>
-          )}
-
-          {(prompt || mode === "manual" || mode === "img2img" || mode === "video") && (mode !== "keywords" || prompt) && (
-            <div className="mt-4 space-y-3 pt-4 border-t border-[var(--border)]">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-app-text">
-                  {mode === "video" ? "画面描述" : mode === "img2img" ? "编辑指令" : "提示词"}
-                  {"（可编辑后生成）"}
-                </label>
-                <span className="text-xs text-app-text3">{prompt.length} 字符</span>
+            {queueTasks.length === 0 ? (
+              <div className="py-12 px-4 text-center text-sm text-app-text3">暂无任务</div>
+            ) : (
+              <div className="max-h-[calc(100vh-120px)] overflow-y-auto divide-y divide-app-border">
+                {queueTasks.map((task) => (
+                  <div key={task.id} className="p-3 bg-app-bg">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-app-text3">#{task.id}</span>
+                      <button onClick={() => handleDeleteTask(task.id)} className="text-xs text-app-text3 hover:text-app-text transition flex-shrink-0">删除</button>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 min-w-0">
+                      <span className="rounded-md border border-app-border bg-app-bg2 px-1.5 py-0.5 text-[11px] text-app-text2 flex-shrink-0">
+                        {task.type === "video" ? "视频" : "图片"}
+                      </span>
+                      <p className="truncate text-xs text-app-text2">{task.prompt || task.keywordNames || "等待处理"}</p>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-2 text-xs">
+                      <span style={{ color: task.status === "failed" ? "#ef4444" : "var(--text-muted)" }}>
+                        {task.status === "failed" ? "失败" : task.status === "processing" ? "处理中" : "排队中"}
+                      </span>
+                      <span className="text-app-text3">{task.progress || 0}%</span>
+                    </div>
+                    <div className="mt-2 h-1 rounded-full bg-[var(--bg-tertiary)] overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[var(--accent)] transition-all"
+                        style={{ width: `${Math.max(5, Math.min(100, task.progress || (task.status === "failed" ? 100 : 10)))}%` }}
+                      />
+                    </div>
+                    {task.error && <p className="mt-2 text-xs text-red-500 break-words">{task.error}</p>}
+                  </div>
+                ))}
               </div>
-              <div className="relative">
-                <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={4}
-                  className="w-full px-3 py-2.5 pr-20 bg-app-bg border border-app-border rounded-xl text-sm text-app-text leading-relaxed resize-y focus:outline-none"
-                  placeholder="在此输入或编辑提示词..." />
-                <button
-                  onClick={handlePolish}
-                  disabled={loading || !prompt.trim()}
-                  className="absolute bottom-2 right-2 px-3 py-1 text-xs rounded-lg transition text-white"
-                  style={{ background: loading || !prompt.trim() ? "var(--bg-tertiary)" : "var(--accent)", color: loading || !prompt.trim() ? "var(--text-muted)" : "#fff" }}
-                >
-                  {loading && statusText === "AI 润色中..." ? "..." : "AI 润色"}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {mode !== "keywords" || prompt ? (
-            <button onClick={handleGenerate} disabled={loading || !loggedIn || (!prompt.trim() && mode !== "img2img")}
-              className="mt-4 w-full py-2.5 sm:py-3 text-white font-medium rounded-xl transition text-base sm:text-lg"
-              style={{ background: loading || !loggedIn ? "var(--bg-tertiary)" : "var(--accent)", color: loading || !loggedIn ? "var(--text-muted)" : "#fff" }}>
-              {!loggedIn ? "请先登录" : loading ? statusText : mode === "video" ? "生成视频" : "生成图片"}
-            </button>
-          ) : null}
+            )}
+          </aside>
         </div>
-
-        <h2 className="text-base sm:text-lg font-semibold text-app-text mb-4">生成作品</h2>
-        <MasonryGallery records={records} liveTasks={liveTasks} onDelete={handleDeleteHistory} onDeleteTask={handleDeleteTask} />
       </main>
     </div>
   );

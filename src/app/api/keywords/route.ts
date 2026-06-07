@@ -3,13 +3,59 @@ import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { keywordGroups, keywords } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { defaultKeywordGroups, legacyKeywordGroupSlugs } from "@/lib/keyword-presets";
+
+function syncDefaultKeywordGroups() {
+  const groups = db.select().from(keywordGroups).all();
+  const existingSlugs = new Set(groups.map((group) => group.slug));
+  const hasLegacyDefaults = legacyKeywordGroupSlugs.some((slug) => existingSlugs.has(slug));
+  const hasLegacyOnlyGroups = ["character", "style"].some((slug) => existingSlugs.has(slug));
+  const hasAnyDefaultGroup = defaultKeywordGroups.some((group) => existingSlugs.has(group.slug));
+
+  if (groups.length === 0) {
+    for (const group of defaultKeywordGroups) {
+      const inserted = db.insert(keywordGroups).values({ name: group.name, slug: group.slug }).returning().get();
+      for (const keyword of group.keywords) {
+        db.insert(keywords).values({ groupId: inserted.id, name: keyword }).run();
+      }
+    }
+    return;
+  }
+
+  if (!hasLegacyOnlyGroups || !hasLegacyDefaults || !hasAnyDefaultGroup) return;
+
+  for (const group of groups) {
+    if (legacyKeywordGroupSlugs.includes(group.slug)) {
+      db.delete(keywords).where(eq(keywords.groupId, group.id)).run();
+      db.delete(keywordGroups).where(eq(keywordGroups.id, group.id)).run();
+    }
+  }
+
+  for (const group of defaultKeywordGroups) {
+    const inserted = db.insert(keywordGroups).values({ name: group.name, slug: group.slug }).returning().get();
+    for (const keyword of group.keywords) {
+      db.insert(keywords).values({ groupId: inserted.id, name: keyword }).run();
+    }
+  }
+}
 
 export async function GET() {
+  syncDefaultKeywordGroups();
+
   const groups = db.select().from(keywordGroups).all();
+  const presetMeta = new Map(defaultKeywordGroups.map((group) => [group.slug, group]));
   const result = groups.map((g) => ({
     ...g,
+    description: presetMeta.get(g.slug)?.description,
     keywords: db.select().from(keywords).where(eq(keywords.groupId, g.id)).all(),
-  }));
+  })).sort((a, b) => {
+    const ai = defaultKeywordGroups.findIndex((group) => group.slug === a.slug);
+    const bi = defaultKeywordGroups.findIndex((group) => group.slug === b.slug);
+    if (ai === -1 && bi === -1) return a.id - b.id;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
   return NextResponse.json({ success: true, data: result });
 }
 

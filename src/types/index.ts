@@ -2,6 +2,7 @@ export interface KeywordGroup {
   id: number;
   name: string;
   slug: string;
+  description?: string;
   keywords: Keyword[];
 }
 

@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import path from "path";
 import bcrypt from "bcryptjs";
+import { defaultKeywordGroups } from "@/lib/keyword-presets";
 
 const sqlite = new Database(path.join(process.cwd(), "data", "text-to-image.db"));
 sqlite.pragma("journal_mode = WAL");
@@ -60,34 +61,6 @@ const insertConfig = sqlite.prepare(
 for (const [key, value] of Object.entries(defaultConfigs)) {
   insertConfig.run(key, value);
 }
-
-const defaultKeywordGroups = [
-  {
-    slug: "scene",
-    name: "场景",
-    keywords: ["户外", "室内", "城市", "自然", "海边", "森林", "沙漠", "雪山", "草原", "星空"],
-  },
-  {
-    slug: "character",
-    name: "人物",
-    keywords: ["美女", "儿童", "老人", "情侣", "群体", "独行者", "舞者", "运动员"],
-  },
-  {
-    slug: "style",
-    name: "风格",
-    keywords: ["写实", "油画", "水彩", "赛博朋克", "古风", "动漫", "素描", "水墨", "复古", "极简"],
-  },
-  {
-    slug: "lighting",
-    name: "光线",
-    keywords: ["黄金时刻", "蓝色时刻", "逆光", "柔光", "霓虹", "烛光", "阴天", "日光"],
-  },
-  {
-    slug: "composition",
-    name: "构图",
-    keywords: ["特写", "全身", "半身", "俯拍", "仰拍", "对称", "三分法", "引导线"],
-  },
-];
 
 const insertGroup = sqlite.prepare(
   "INSERT OR IGNORE INTO keyword_groups (name, slug) VALUES (?, ?)"
