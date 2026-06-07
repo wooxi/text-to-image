@@ -6,6 +6,7 @@ import KeywordSelector from "./KeywordSelector";
 import ImageUploader from "./ImageUploader";
 import MasonryGallery from "./MasonryGallery";
 import FullscreenViewer from "./FullscreenViewer";
+import { useTheme } from "./ThemeProvider";
 
 interface TaskRecord {
   id: number; status: string; type: string;
@@ -67,6 +68,7 @@ export default function MobileHome(props: Props) {
 
   const [tab, setTab] = useState<"generate" | "gallery" | "tasks" | "settings">("generate");
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const activeTasks = liveTasks.filter(t => t.status === "pending" || t.status === "processing");
   const failedTasks = liveTasks.filter(t => t.status === "failed");
@@ -271,6 +273,12 @@ export default function MobileHome(props: Props) {
         <p className="text-sm" style={{ color: loggedIn ? "var(--success)" : "var(--danger)" }}>
           {loggedIn ? "已登录" : "未登录"}
         </p>
+      </div>
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
+        <p className="text-xs text-[var(--text-muted)] mb-1">主题</p>
+        <button onClick={toggleTheme} className="w-full text-left text-sm text-[var(--text-primary)]">
+          {theme === "dark" ? "☀️ 切换明亮模式" : "🌙 切换暗黑模式"}
+        </button>
       </div>
       <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
         <p className="text-xs text-[var(--text-muted)] mb-1">生成模式</p>
