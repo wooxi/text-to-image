@@ -8,15 +8,21 @@ interface Props {
   record: ImageRecord;
   onDelete: (id: number) => void;
   posterPath?: string;
+  onImageClick?: (record: ImageRecord) => void;
 }
 
 function isVideo(path: string) { return /\.(mp4|webm|mov)$/i.test(path); }
 
-export default function ImageCard({ record, onDelete, posterPath }: Props) {
+export default function ImageCard({ record, onDelete, posterPath, onImageClick }: Props) {
   const [showLightbox, setShowLightbox] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
   const video = record.type === "video" || isVideo(record.imagePath);
   const poster = posterPath || record.posterPath || (video ? record.imagePath.replace(/\.\w+$/, ".jpg") : undefined);
+
+  const handleClick = () => {
+    if (onImageClick) onImageClick(record);
+    else setShowLightbox(true);
+  };
 
   const handleDownload = async () => {
     try {
@@ -35,7 +41,7 @@ export default function ImageCard({ record, onDelete, posterPath }: Props) {
     <>
       <div className="break-inside-avoid mb-3 sm:mb-4 overflow-hidden transition group relative">
         {video ? (
-          <div className="relative cursor-pointer" onClick={() => setShowLightbox(true)}>
+          <div className="relative cursor-pointer" onClick={handleClick}>
             {!imageFailed ? (
               <img
                 src={poster}
@@ -55,7 +61,7 @@ export default function ImageCard({ record, onDelete, posterPath }: Props) {
           </div>
         ) : (
           !imageFailed ? (
-            <img src={record.imagePath} alt={record.prompt} className="w-full h-auto block rounded-lg cursor-pointer" loading="lazy" onClick={() => setShowLightbox(true)} onError={() => setImageFailed(true)} />
+            <img src={record.imagePath} alt={record.prompt} className="w-full h-auto block rounded-lg cursor-pointer" loading="lazy" onClick={handleClick} onError={() => setImageFailed(true)} />
           ) : (
             <div className="min-h-40 rounded-lg flex items-center justify-center p-4 text-xs text-center" style={{ background: "var(--bg-tertiary)", color: "var(--text-muted)" }}>图片加载失败</div>
           )

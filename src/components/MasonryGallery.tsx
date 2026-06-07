@@ -19,11 +19,12 @@ interface Props {
   liveTasks: TaskRecord[];
   onDelete: (id: number) => void;
   onDeleteTask: (id: number) => void;
+  onImageClick?: (record: ImageRecord) => void;
 }
 
 function isVideo(record: ImageRecord) { return record.type === "video" || /\.(mp4|webm|mov)$/i.test(record.imagePath); }
 
-export default function MasonryGallery({ records, liveTasks, onDelete, onDeleteTask }: Props) {
+export default function MasonryGallery({ records, liveTasks, onDelete, onDeleteTask, onImageClick }: Props) {
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [filterType, setFilterType] = useState<FilterType>("all");
 
@@ -91,7 +92,7 @@ export default function MasonryGallery({ records, liveTasks, onDelete, onDeleteT
           <TaskCard key={`task-${task.id}`} task={task} onDelete={onDeleteTask} />
         ))}
         {sorted.map((record) => (
-          <ImageCard key={record.id} record={record} onDelete={onDelete} />
+            <ImageCard key={record.id} record={record} onDelete={onDelete} onImageClick={onImageClick} />
         ))}
       </div>
     </div>

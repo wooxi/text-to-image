@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import KeywordSelector from "@/components/KeywordSelector";
 import ImageUploader from "@/components/ImageUploader";
 import MasonryGallery from "@/components/MasonryGallery";
+import MobileHome from "@/components/MobileHome";
 import { KeywordGroup, ImageRecord } from "@/types";
 
 const SIZE_MAP: [string, string][] = [
@@ -206,7 +207,9 @@ export default function HomePage() {
   const queueTasks = [...activeTasks, ...failedTasks];
 
   return (
-    <div className="min-h-screen bg-app-bg text-app-text">
+    <>
+      {/* Desktop layout */}
+      <div className="hidden lg:block min-h-screen bg-app-bg text-app-text">
       <Header />
 
       <section className="w-full border-b border-app-border bg-app-bg3/30">
@@ -502,5 +505,46 @@ export default function HomePage() {
         </div>
       </main>
     </div>
+
+    {/* Mobile layout */}
+    <div className="lg:hidden">
+      <MobileHome
+        loggedIn={loggedIn}
+        groups={groups}
+        selected={selected}
+        onToggleKeyword={toggleKeyword}
+        onClearKeywords={clearSelectedKeywords}
+        prompt={prompt}
+        onPromptChange={setPrompt}
+        loading={loading}
+        statusText={statusText}
+        mode={mode}
+        onModeChange={setMode}
+        records={records}
+        liveTasks={liveTasks}
+        onGeneratePrompt={handleGeneratePrompt}
+        onGenerate={handleGenerate}
+        onPolish={handlePolish}
+        onDeleteHistory={handleDeleteHistory}
+        onDeleteTask={handleDeleteTask}
+        refImages={refImages}
+        onRefImagesChange={setRefImages}
+        videoRefImages={videoRefImages}
+        onVideoRefImagesChange={setVideoRefImages}
+        videoMode={videoMode}
+        onVideoModeChange={setVideoMode}
+        videoWidth={videoWidth}
+        onVideoWidthChange={setVideoWidth}
+        videoHeight={videoHeight}
+        onVideoHeightChange={setVideoHeight}
+        videoFrames={videoFrames}
+        onVideoFramesChange={setVideoFrames}
+        videoFps={videoFps}
+        onVideoFpsChange={setVideoFps}
+        outputSize={outputSize}
+        videoDuration={videoDuration}
+      />
+    </div>
+  </>
   );
 }
