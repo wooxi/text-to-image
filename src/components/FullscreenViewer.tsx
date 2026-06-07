@@ -188,7 +188,7 @@ export default function FullscreenViewer({ records, activeIndex, onClose, onDele
       </div>
 
       {/* Action bar - bottom */}
-      <div className="absolute bottom-0 inset-x-0 z-10 pb-6 px-4">
+      <div className="absolute bottom-0 inset-x-0 z-10 pb-6 px-4" onClick={(e) => e.stopPropagation()}>
         {/* Nav arrows */}
         <div className="flex justify-between items-center mb-4 px-2 pointer-events-none">
           <button
@@ -227,6 +227,7 @@ export default function FullscreenViewer({ records, activeIndex, onClose, onDele
         <div
           className="absolute bottom-0 inset-x-0 z-20 bg-[#1a1a1a] rounded-t-2xl max-h-[55vh] overflow-y-auto animate-slide-up"
           style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.5)" }}
+          onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-center pt-3 pb-1">
             <div className="w-10 h-1 rounded-full bg-white/30" />
