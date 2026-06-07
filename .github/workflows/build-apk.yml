@@ -17,11 +17,11 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          packages: "platforms;android-34 build-tools;34.0.0"
+      - name: Install Android SDK packages
+        run: yes | sdkmanager "platforms;android-36" "build-tools;36.0.0" --channel=3 2>&1 || sdkmanager "platforms;android-35" "build-tools;35.0.0" 2>&1
       - name: Install deps
         run: npm ci
       - name: Create data dir and init DB
