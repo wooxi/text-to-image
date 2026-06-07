@@ -3,7 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { config, keywordGroups, keywords } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { defaultKeywordGroups, keywordSyncVersion, legacyKeywordGroupSlugs, legacyOnlyKeywordGroupSlugs } from "@/lib/keyword-presets";
+import { defaultKeywordGroups, keywordSyncVersion, legacyKeywordGroupSlugs, legacyOnlyKeywordGroupSlugs, keywordOldDefaults } from "@/lib/keyword-presets";
 
 const managedKeywordGroupSlugs = defaultKeywordGroups.map((group) => group.slug);
 const replaceableKeywordGroupSlugs = Array.from(new Set([...legacyKeywordGroupSlugs, ...legacyOnlyKeywordGroupSlugs, ...managedKeywordGroupSlugs]));
@@ -22,19 +22,38 @@ function insertKeywordGroup(group: (typeof defaultKeywordGroups)[number]) {
   }
 }
 
-function appendMissingManagedKeywords() {
+function syncManagedGroupPresets() {
   const groups = db.select().from(keywordGroups).all();
 
   for (const presetGroup of defaultKeywordGroups) {
     const existingGroup = groups.find((group) => group.slug === presetGroup.slug);
-    if (!existingGroup) continue;
+    if (!existingGroup) {
+      insertKeywordGroup(presetGroup);
+      continue;
+    }
 
-    const existingKeywords = new Set(
-      db.select().from(keywords).where(eq(keywords.groupId, existingGroup.id)).all().map((keyword) => keyword.name)
+    // Update group name if the preset changed it
+    if (existingGroup.name !== presetGroup.name) {
+      db.update(keywordGroups).set({ name: presetGroup.name }).where(eq(keywordGroups.id, existingGroup.id)).run();
+    }
+
+    const currentKeywords = db.select().from(keywords).where(eq(keywords.groupId, existingGroup.id)).all();
+    const currentNames = new Set(currentKeywords.map((kw) => kw.name));
+    const oldDefaults = new Set(keywordOldDefaults[presetGroup.slug] ?? []);
+
+    // Remove known old default keywords
+    for (const kw of currentKeywords) {
+      if (oldDefaults.has(kw.name)) {
+        db.delete(keywords).where(eq(keywords.id, kw.id)).run();
+      }
+    }
+
+    // Insert new default keywords that aren't already present (may have been custom-added earlier)
+    const remainingNames = new Set(
+      db.select().from(keywords).where(eq(keywords.groupId, existingGroup.id)).all().map((kw) => kw.name),
     );
-
     for (const keyword of presetGroup.keywords) {
-      if (!existingKeywords.has(keyword)) {
+      if (!remainingNames.has(keyword)) {
         db.insert(keywords).values({ groupId: existingGroup.id, name: keyword }).run();
       }
     }
@@ -76,7 +95,7 @@ function syncDefaultKeywordGroups() {
   }
 
   if (needsVersionSync) {
-    appendMissingManagedKeywords();
+    syncManagedGroupPresets();
     upsertKeywordSyncVersion();
   }
 }

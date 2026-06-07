@@ -54,6 +54,8 @@ export default function HomePage() {
   const [liveTasks, setLiveTasks] = useState<TaskRecord[]>([]);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const [chinesePrompt, setChinesePrompt] = useState("");
+
   const fetchGroups = useCallback(async () => {
     try { const res = await fetch("/api/keywords"); const data = await res.json(); if (data.success) setGroups(data.data); } catch {}
   }, []);
@@ -101,11 +103,29 @@ export default function HomePage() {
   const handleGeneratePrompt = async () => {
     if (selected.length === 0) { alert("请至少选择一个关键词"); return; }
     if (!loggedIn) { alert("请先登录"); return; }
-    setLoading(true); setStatusText("正在生成提示词..."); setPrompt("");
+    setLoading(true); setStatusText("正在生成提示词..."); setPrompt(""); setChinesePrompt("");
     try {
-      const res = await fetch("/api/generate-prompt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ keywords: selected }) });
+      // Build structured keywords with group slugs
+      const structured = selected.map((name) => {
+        for (const group of groups) {
+          if (group.keywords.some((kw) => kw.name === name)) {
+            return { name, groupSlug: group.slug };
+          }
+        }
+        return { name, groupSlug: null };
+      });
+      const res = await fetch("/api/generate-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keywords: structured }),
+      });
       const data = await res.json();
-      if (data.success) setPrompt(data.data.prompt); else alert(data.error || "生成失败");
+      if (data.success) {
+        setPrompt(data.data.english || data.data.prompt);
+        setChinesePrompt(data.data.chinese || "");
+      } else {
+        alert(data.error || "生成失败");
+      }
     } catch { alert("生成出错"); }
     finally { setLoading(false); setStatusText(""); }
   };
@@ -385,6 +405,15 @@ export default function HomePage() {
                 </div>
                 <span className="text-xs text-app-text3 flex-shrink-0">{prompt.length} 字符</span>
               </div>
+              {chinesePrompt && (
+                <div className="px-4 sm:px-6 py-4 border-b border-app-border bg-app-bg3/20">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <span className="text-[11px] uppercase tracking-[0.16em] text-app-text3">结构化描述</span>
+                    <button onClick={() => setChinesePrompt("")} className="text-xs text-app-text3 hover:text-app-text transition flex-shrink-0">收起</button>
+                  </div>
+                  <div className="text-sm leading-relaxed text-app-text2 whitespace-pre-wrap max-h-64 overflow-y-auto">{chinesePrompt}</div>
+                </div>
+              )}
               <textarea
                 value={prompt}
                 onChange={e => setPrompt(e.target.value)}
