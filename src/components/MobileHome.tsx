@@ -81,6 +81,16 @@ export default function MobileHome(props: Props) {
   const renderGenerateTab = () => (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+        {!loggedIn && (
+          <a
+            href="/admin/login"
+            className="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition"
+            style={{ background: "var(--accent-light)", color: "var(--accent)" }}
+          >
+            <span>请先登录后才能生成</span>
+            <span className="text-xs opacity-70">去登录 →</span>
+          </a>
+        )}
         {/* Mode selector */}
         <div className="grid grid-cols-4 gap-1.5 bg-[var(--bg-tertiary)] rounded-xl p-1">
           {(["keywords", "manual", "img2img", "video"] as const).map((m) => (
