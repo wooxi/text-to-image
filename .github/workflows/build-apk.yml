@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -24,12 +24,14 @@ jobs:
           packages: "platforms;android-34 build-tools;34.0.0"
       - name: Install deps
         run: npm ci
-      - name: Create data dir
-        run: mkdir -p data
+      - name: Create data dir and init DB
+        run: mkdir -p data && npx drizzle-kit push --force
       - name: Build Next.js
         run: npm run build
       - name: Create out dir
-        run: mkdir -p out && echo '<html><body><script>location.href="http://192.168.100.6:8080"</script></body></html>' > out/index.html
+        run: |
+          mkdir -p out
+          echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>AI 文生图</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><script>location.href="http://192.168.100.6:8080";</script></body></html>' > out/index.html
       - name: Sync Capacitor
         run: npx cap sync android
       - name: Build APK
