@@ -240,7 +240,7 @@ export default function HomePage() {
                 <div className="px-4 sm:px-6 py-4 border-b border-app-border flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-sm font-semibold text-app-text">参数配置</h2>
-                    <p className="mt-1 text-xs text-app-text3">选择关键词，必要时添加参考图。</p>
+                    <p className="mt-1 text-xs text-app-text3">按主体、场景、光线逐步补词即可，不需要把每一组都选满。</p>
                   </div>
                   <span className="text-xs text-app-text3 flex-shrink-0">{selected.length} 已选</span>
                 </div>
@@ -266,7 +266,7 @@ export default function HomePage() {
                         <div className="mb-3 flex items-center justify-between gap-3">
                           <div>
                             <h3 className="text-sm font-semibold text-app-text">已选关键词</h3>
-                            <p className="mt-1 text-xs text-app-text3">这些词会组合成提示词基础方向。</p>
+                            <p className="mt-1 text-xs text-app-text3">建议先选 3 到 6 个核心词，再交给模型扩写提示词。</p>
                           </div>
                           <button
                             type="button"
