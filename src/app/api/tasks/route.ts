@@ -158,7 +158,7 @@ ${isImg2img ? "5. 对于图片编辑，明确描述要修改什么、保留什�
   }
 }
 
-async function processVideoTask(taskId: number, width: number, height: number, numFrames: number, fps: number) {
+async function processVideoTask(taskId: number, width: number, height: number, numFrames: number, fps: number, videoMode: string) {
   const now = () => new Date().toISOString();
   try {
     const task = db.select().from(tasks).where(eq(tasks.id, taskId)).get();
@@ -221,18 +221,18 @@ async function processVideoTask(taskId: number, width: number, height: number, n
       frame_rate: fps,
     };
 
-    if (task.referenceImage) {
-      const isBase64 = task.referenceImage.startsWith("data:");
-      if (isBase64) {
-        const publicDir = path.join(process.cwd(), "public", "images", "generated");
-        if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
-        const refFilename = `ref_${uuidv4()}.png`;
-        const refPath = path.join(publicDir, refFilename);
-        const base64Data = task.referenceImage.split(",")[1];
-        fs.writeFileSync(refPath, Buffer.from(base64Data, "base64"));
-        reqBody.image = `data:image/png;base64,${base64Data}`;
+    const referenceImages = parseReferenceImages(task.referenceImage);
+    if (referenceImages.length > 0) {
+      if (referenceImages.some((image) => image.startsWith("data:"))) {
+        throw new Error("视频参考图请使用公网 URL，Agnes 视频接口不支持本地 Base64 图片");
+      }
+      reqBody.image = referenceImages.length === 1 ? referenceImages[0] : referenceImages;
+      reqBody.extra_body = { image: referenceImages };
+      if (videoMode === "keyframes") {
+        reqBody.mode = "keyframes";
+        (reqBody.extra_body as Record<string, unknown>).mode = "keyframes";
       } else {
-        reqBody.image = task.referenceImage;
+        reqBody.mode = "ti2vid";
       }
     }
 
@@ -260,7 +260,7 @@ async function processVideoTask(taskId: number, width: number, height: number, n
       await new Promise((r) => setTimeout(r, 5000));
       let statusRes: Response;
       try {
-        statusRes = await fetch(`${baseUrl}/agnesapi?video_id=${encodeURIComponent(videoId)}`, {
+        statusRes = await fetch(`${baseUrl}/agnesapi?video_id=${encodeURIComponent(videoId)}&model_name=${encodeURIComponent(videoModel)}`, {
           headers: { Authorization: `Bearer ${key}` },
         });
       } catch (fetchErr) {
@@ -324,7 +324,7 @@ async function processVideoTask(taskId: number, width: number, height: number, n
 export async function POST(request: Request) {
   try {
     await requireAuth();
-    const { keywords, size, type, image, prompt: manualPrompt, width, height, num_frames, frame_rate } = await request.json();
+    const { keywords, size, type, image, prompt: manualPrompt, width, height, num_frames, frame_rate, video_mode } = await request.json();
     if (!keywords && !manualPrompt) {
       return NextResponse.json({ success: false, error: "缺少关键词或提示词" }, { status: 400 });
     }
@@ -340,7 +340,7 @@ export async function POST(request: Request) {
     }).returning().get();
 
     if (taskType === "video") {
-      processVideoTask(task.id, width || 1152, height || 768, num_frames || 121, frame_rate || 24);
+      processVideoTask(task.id, width || 1152, height || 768, num_frames || 121, frame_rate || 24, video_mode || "reference");
     } else {
       processImageTask(task.id, taskType === "img2img");
     }

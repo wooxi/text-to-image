@@ -44,8 +44,9 @@ export default function HomePage() {
   const [records, setRecords] = useState<ImageRecord[]>([]);
   const [loggedIn, setLoggedIn] = useState(false);
   const [mode, setMode] = useState<"keywords" | "manual" | "img2img" | "video">("keywords");
-  const [refImage, setRefImage] = useState("");
   const [refImages, setRefImages] = useState<string[]>([]);
+  const [videoRefImages, setVideoRefImages] = useState<string[]>([]);
+  const [videoMode, setVideoMode] = useState<"reference" | "keyframes">("reference");
   const [videoWidth, setVideoWidth] = useState(1920);
   const [videoHeight, setVideoHeight] = useState(1080);
   const [videoFrames, setVideoFrames] = useState(121);
@@ -117,6 +118,7 @@ export default function HomePage() {
       body.height = videoHeight;
       body.num_frames = videoFrames;
       body.frame_rate = videoFps;
+      body.video_mode = videoMode;
     }
 
     if (mode === "keywords" || mode === "img2img") {
@@ -134,8 +136,9 @@ export default function HomePage() {
     if (mode === "img2img") {
       if (refImages.length === 0) { alert("请至少添加一张参考图"); return; }
       body.image = refImages;
-    } else if (mode === "video" && refImage) {
-      body.image = refImage;
+    } else if (mode === "video" && videoRefImages.length > 0) {
+      if (videoMode === "keyframes" && videoRefImages.length < 2) { alert("关键帧动画至少需要两张图片 URL"); return; }
+      body.image = videoRefImages;
     }
 
     setLoading(true); setStatusText("正在创建任务...");
@@ -229,12 +232,33 @@ export default function HomePage() {
             <div className="space-y-3">
               <h2 className="text-base sm:text-lg font-semibold text-app-text">视频生成</h2>
               <div>
-                <label className="text-xs text-app-text3">参考图 URL（图生视频，可选）</label>
-                <input value={refImage} onChange={e => setRefImage(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 bg-app-bg border border-app-border rounded-lg text-sm text-app-text focus:outline-none"
-                  placeholder="https://example.com/image.png（公网可访问的图片地址）" />
+                <label className="text-xs text-app-text3">视频工作流</label>
+                <div className="mt-1 flex gap-1 bg-app-bg rounded-lg p-1">
+                  {([
+                    ["reference", "参考图/多图"],
+                    ["keyframes", "关键帧动画"],
+                  ] as ["reference" | "keyframes", string][]).map(([key, label]) => (
+                    <button key={key} type="button" onClick={() => setVideoMode(key)}
+                      className="flex-1 py-1.5 px-2 rounded-md text-xs font-medium transition"
+                      style={{ background: videoMode === key ? "var(--accent)" : "transparent", color: videoMode === key ? "#fff" : "var(--text-secondary)" }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <p className="text-xs text-app-text3">{refImage ? "图生视频：以参考图 + 描述画面动作" : "文生视频：输入画面动作描述即可"}</p>
+              <div>
+                <label className="text-xs text-app-text3">参考图 URL（可选）</label>
+                <div className="mt-1">
+                  <ImageUploader images={videoRefImages} onChange={setVideoRefImages} allowUpload={false} allowDataUri={false} />
+                </div>
+              </div>
+              <p className="text-xs text-app-text3">
+                {videoRefImages.length === 0
+                  ? "文生视频：不添加参考图时，仅根据画面描述生成"
+                  : videoMode === "keyframes"
+                    ? "关键帧动画：用多张图片生成平滑转场"
+                    : "参考图/多图视频：用一张或多张公网图片约束主体和风格"}
+              </p>
 
               <div className="relative">
                 <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3}
