@@ -24,6 +24,8 @@ jobs:
           packages: "platforms;android-34 build-tools;34.0.0"
       - name: Install deps
         run: npm ci
+      - name: Create data dir
+        run: mkdir -p data
       - name: Build Next.js
         run: npm run build
       - name: Create out dir
