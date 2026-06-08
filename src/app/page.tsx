@@ -423,472 +423,506 @@ export default function HomePage() {
 
   return (
     <>
+      {/* ═══════════ DESKTOP ═══════════ */}
       <div className="hidden min-h-screen lg:block">
         <Header />
 
-        <main className="mx-auto flex max-w-[124rem] flex-col gap-6 px-4 pb-10 pt-6 sm:px-6 xl:px-8">
-          {!loggedIn && (
-            <div className="glass-panel rounded-[2rem] px-5 py-4 text-sm text-[var(--accent)]">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-[11px] uppercase tracking-[0.22em] text-app-text3">Access</div>
-                  <p className="mt-1 text-sm text-app-text">当前未登录，无法提交生成任务。登录后才能调用 `gpt-image` 或 Agnes 服务。</p>
-                </div>
-                <Link href="/admin/login" className="rounded-full bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--accent-hover)]">
-                  去登录
-                </Link>
+        {/* Unauthenticated banner */}
+        {!loggedIn && (
+          <div className="border-b border-app-border/50 bg-[var(--accent-light)]/30">
+            <div className="mx-auto max-w-[1400px] flex items-center justify-between gap-4 px-6 py-2.5 text-sm">
+              <span className="text-app-text2">
+                当前未登录，无法提交生成任务。请登录后使用 gpt-image 或 Agnes 服务。
+              </span>
+              <Link
+                href="/admin/login"
+                className="rounded-md bg-[var(--accent)] px-4 py-1.5 text-xs font-medium text-white transition-base hover:bg-[var(--accent-hover)]"
+              >
+                去登录
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Hero stats bar */}
+        <div className="border-b border-app-border/50 bg-[var(--bg-secondary)]/80 backdrop-blur-lg">
+          <div className="mx-auto flex max-w-[1400px] items-center gap-6 px-6 py-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-[10px] uppercase tracking-[0.22em] text-app-text3 shrink-0">
+                {MODE_META[mode].eyebrow}
+              </span>
+              <span className="text-xs font-semibold text-app-text2 truncate">
+                {currentMode?.label ?? "关键词导演"}
+              </span>
+            </div>
+
+            <div className="ml-auto flex items-center gap-2">
+              <div className="flex items-center gap-1.5 rounded-md border border-app-border/60 px-2.5 py-1.5">
+                <span className="text-[10px] text-app-text3">词</span>
+                <span className="text-xs font-mono font-medium tabular-nums text-app-text">
+                  {groups.length === 0 ? (
+                    <span className="inline-block w-5 h-3 rounded-sm bg-[var(--border)] animate-skeleton align-middle" />
+                  ) : (
+                    semanticSelected.length
+                  )}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 rounded-md border border-app-border/60 px-2.5 py-1.5">
+                <span className="text-[10px] text-app-text3">输出</span>
+                <span className="text-xs font-mono font-medium tabular-nums text-app-text">
+                  {mode === "video" ? `${videoWidth}×${videoHeight}` : outputSize || "1024×1024"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 rounded-md border border-app-border/60 px-2.5 py-1.5">
+                <span className="text-[10px] text-app-text3">队列</span>
+                <span className="text-xs font-mono font-medium tabular-nums text-app-text">{activeTasks.length}</span>
+                {failedTasks.length > 0 && (
+                  <span className="text-xs font-mono font-medium tabular-nums text-[var(--danger)]">
+                    /{failedTasks.length}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 rounded-md border border-app-border/60 px-2.5 py-1.5">
+                <span className="text-[10px] text-app-text3">成品</span>
+                <span className="text-xs font-mono font-medium tabular-nums text-app-text">{records.length}</span>
               </div>
             </div>
-          )}
+          </div>
+        </div>
 
-          <section className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
-            <div className="glass-panel relative overflow-hidden rounded-[2rem] p-7 xl:p-8">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(217,107,43,0.14),_transparent_28%),radial-gradient(circle_at_left_center,_rgba(136,192,168,0.12),_transparent_30%)]" />
-              <div className="relative flex h-full flex-col justify-between gap-8">
-                <div className="max-w-3xl">
-                  <div className="text-[11px] uppercase tracking-[0.28em] text-app-text3">{MODE_META[mode].eyebrow}</div>
-                  <h1 className="mt-3 text-3xl font-semibold leading-tight text-app-text xl:text-5xl">
-                    先定义主体和镜头，再决定模型如何生成这张图。
-                  </h1>
-                  <p className="mt-4 max-w-2xl text-sm leading-7 text-app-text2 xl:text-base">
-                    关键词系统已经按主体、环境、穿着、姿势、镜头、风格重新拆分。输出比例和清晰度独立处理，避免语义词和参数词混杂。当前兼容 OpenAI `gpt-image-1`，也适配 Agnes 图像和视频参数约束。
+        {/* Main three-column grid */}
+        <main className="mx-auto grid max-w-[1400px] grid-cols-12">
+          {/* ── LEFT SIDEBAR ── */}
+          <aside className="col-span-3 border-r border-app-border/50 sticky top-16 h-[calc(100vh-64px)] overflow-y-auto py-5 pr-5">
+            <div className="pl-6 space-y-5">
+              <div>
+                <h3 className="mb-3 text-[10px] uppercase tracking-[0.22em] text-app-text3">生成模式</h3>
+                <div className="space-y-1">
+                  {tabs.map((tab) => {
+                    const active = tab.key === mode;
+                    return (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => setMode(tab.key)}
+                        className="w-full rounded-md px-3 py-2.5 text-left transition-base"
+                        style={{
+                          background: active ? "var(--accent-light)" : "transparent",
+                          borderLeft: active ? "2px solid var(--accent)" : "2px solid transparent",
+                        }}
+                      >
+                        <div
+                          className="text-xs font-medium"
+                          style={{ color: active ? "var(--accent)" : "var(--text-secondary)" }}
+                        >
+                          {tab.label}
+                        </div>
+                        <div className="mt-0.5 text-[11px] leading-4 text-app-text3">{tab.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <hr className="divider" />
+
+              <div>
+                <h3 className="mb-3 text-[10px] uppercase tracking-[0.22em] text-app-text3">输出规格</h3>
+                <div className="panel-soft rounded-lg p-3.5">
+                  <div className="text-xs font-mono font-medium tabular-nums text-app-text">
+                    {mode === "video" ? `${videoWidth}×${videoHeight}` : outputSize || "1024×1024"}
+                  </div>
+                  <div className="mt-1 text-[11px] text-app-text3">
+                    {mode === "video" ? `${videoFrames} 帧 ${videoFps}fps ${videoDuration}s` : `${selected.length} 个参数已选`}
+                  </div>
+                  <p className="mt-2 text-[11px] leading-4 text-app-text3">
+                    {mode === "video"
+                      ? "Agnes 约束：(n-1) 可被 8 整除，fps 1-60"
+                      : "比例和清晰度仅作为参数，不混入语义 prompt。"}
                   </p>
                 </div>
-
-                <div className="grid gap-4 md:grid-cols-4">
-                  <div className="panel-soft rounded-[1.5rem] p-4">
-                    <div className="text-[11px] uppercase tracking-[0.2em] text-app-text3">Mode</div>
-                    <div className="mt-2 text-2xl font-semibold text-app-text">{currentMode?.label}</div>
-                    <p className="mt-2 text-xs leading-6 text-app-text3">{MODE_META[mode].desc}</p>
-                  </div>
-                  <div className="panel-soft rounded-[1.5rem] p-4">
-                    <div className="text-[11px] uppercase tracking-[0.2em] text-app-text3">Semantic</div>
-                    <div className="mt-2 text-2xl font-semibold text-app-text">{semanticSelected.length}</div>
-                    <p className="mt-2 text-xs leading-6 text-app-text3">已选画面语义词，建议控制在 4 到 8 个核心描述。</p>
-                  </div>
-                  <div className="panel-soft rounded-[1.5rem] p-4">
-                    <div className="text-[11px] uppercase tracking-[0.2em] text-app-text3">Output</div>
-                    <div className="mt-2 text-2xl font-semibold text-app-text">{mode === "video" ? `${videoWidth}×${videoHeight}` : outputSize || "1024×1024"}</div>
-                    <p className="mt-2 text-xs leading-6 text-app-text3">{mode === "video" ? `${videoFrames} 帧 / ${videoFps}fps / ${videoDuration}s` : `${outputSelected.length} 个输出参数已生效`}</p>
-                  </div>
-                  <div className="panel-soft rounded-[1.5rem] p-4">
-                    <div className="text-[11px] uppercase tracking-[0.2em] text-app-text3">Queue</div>
-                    <div className="mt-2 text-2xl font-semibold text-app-text">{activeTasks.length}</div>
-                    <p className="mt-2 text-xs leading-6 text-app-text3">进行中 {activeTasks.length}，失败 {failedTasks.length}，图库累计 {records.length} 项。</p>
-                  </div>
-                </div>
               </div>
             </div>
+          </aside>
 
-            <div className="glass-panel rounded-[2rem] p-6 xl:p-7">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-[11px] uppercase tracking-[0.24em] text-app-text3">Workflow</div>
-                  <h2 className="mt-2 text-2xl font-semibold text-app-text">关键词流程</h2>
-                </div>
-                <span className="rounded-full border border-app-border px-3 py-1 text-xs text-app-text3">{groups.length} 组分类</span>
-              </div>
-              <div className="mt-6 space-y-3">
-                {workflowGroups.map((item, index) => (
-                  <div key={item.slug} className="panel-soft rounded-[1.35rem] px-4 py-4">
-                    <div className="flex items-start gap-4">
-                      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[var(--accent-light)] text-sm font-semibold text-[var(--accent)]">
-                        {index + 1}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <h3 className="text-sm font-semibold text-app-text">{item.name}</h3>
-                            <p className="mt-1 text-xs leading-6 text-app-text3">{item.hint}</p>
-                          </div>
-                          <span className="rounded-full border border-app-border px-2.5 py-1 text-[11px] text-app-text3">{item.selectedCount} 已选</span>
-                        </div>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {(item.facets.length > 0 ? item.facets : []).slice(0, 4).map((facet) => (
-                            <span key={facet.slug} className="rounded-full bg-app-bg px-3 py-1 text-xs text-app-text2">
-                              {facet.name}
-                            </span>
-                          ))}
-                        </div>
+          {/* ── CENTER ── */}
+          <div className="col-span-6 py-4 px-6 space-y-6">
+            {/* Workflow steps */}
+            <div className="flex items-center gap-0 overflow-x-auto pb-2">
+              {workflowGroups.length === 0 ? (
+                <div className="flex items-center gap-3">
+                  {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                    <div key={n} className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--border)] animate-skeleton" />
+                      <div className="space-y-1">
+                        <div className="h-3 w-10 rounded-sm bg-[var(--border)] animate-skeleton" />
+                        <div className="h-2 w-16 rounded-sm bg-[var(--border)] animate-skeleton" />
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="grid items-start gap-6 xl:grid-cols-[19rem_minmax(0,1fr)_22rem]">
-            <aside className="glass-panel sticky top-24 rounded-[2rem] p-5">
-              <div>
-                <div className="text-[11px] uppercase tracking-[0.24em] text-app-text3">Generate Mode</div>
-                <h2 className="mt-2 text-xl font-semibold text-app-text">创作入口</h2>
-              </div>
-              <div className="mt-5 space-y-3">
-                {tabs.map((tab) => {
-                  const active = tab.key === mode;
-                  return (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      onClick={() => setMode(tab.key)}
-                      className="w-full rounded-[1.35rem] border px-4 py-4 text-left transition"
+                  ))}
+                </div>
+              ) : (
+                workflowGroups.map((item, index) => (
+                  <div key={item.slug} className="flex items-center gap-2 shrink-0">
+                    <div
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-base"
                       style={{
-                        borderColor: active ? "var(--accent)" : "var(--border)",
-                        background: active ? "var(--accent-light)" : "var(--bg-secondary)",
-                        boxShadow: active ? "0 0 0 1px var(--accent-light) inset" : "none",
+                        background: item.selectedCount > 0 ? "var(--accent)" : "var(--bg-tertiary)",
+                        color: item.selectedCount > 0 ? "#fff" : "var(--text-muted)",
                       }}
                     >
-                      <div className="text-sm font-semibold" style={{ color: active ? "var(--accent)" : "var(--text-primary)" }}>
-                        {tab.label}
+                      {index + 1}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-medium text-app-text leading-tight">{item.name}</div>
+                      <div className="text-[10px] text-app-text3 leading-tight">{item.hint}</div>
+                    </div>
+                    {index < workflowGroups.length - 1 && (
+                      <div className="mx-1 h-px w-8 shrink-0 bg-app-border/60" />
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <hr className="divider" />
+
+            {/* Mode-dependent params */}
+            {(mode === "keywords" || mode === "img2img") && (
+              <div className="space-y-5 animate-fade-in">
+                {mode === "img2img" && (
+                  <div className="panel-soft rounded-lg p-4">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-xs font-semibold text-app-text">参考图输入</h3>
+                        <p className="mt-0.5 text-[11px] text-app-text3">上传底图或粘贴图片 URL / Data URI 进行局部编辑。</p>
                       </div>
-                      <p className="mt-1 text-xs leading-6 text-app-text3">{tab.desc}</p>
+                      <span className="rounded-md border border-app-border px-2 py-0.5 text-[10px] text-app-text3">{refImages.length} 张</span>
+                    </div>
+                    <ImageUploader images={refImages} onChange={setRefImages} />
+                  </div>
+                )}
+
+                <KeywordSelector
+                  groups={groups}
+                  selected={selected}
+                  onToggle={toggleKeyword}
+                  onClear={clearSelectedKeywords}
+                />
+
+                {selected.length > 0 && (
+                  <div className="panel-soft rounded-lg p-4">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div>
+                        <h3 className="text-xs font-semibold text-app-text">当前画面要素</h3>
+                        <p className="mt-0.5 text-[11px] text-app-text3">再次点击标签即可移除对应词条。</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={clearSelectedKeywords}
+                        className="rounded-md border border-app-border px-2.5 py-1 text-[11px] text-app-text3 transition-base hover:border-[var(--border-hover)] hover:text-app-text"
+                      >
+                        清空全部
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selected.map((keyword) => (
+                        <button
+                          key={keyword}
+                          type="button"
+                          onClick={() => toggleKeyword(keyword)}
+                          className="rounded-md border px-2.5 py-1 text-xs transition-base"
+                          style={{
+                            borderColor: "var(--accent)",
+                            background: "var(--accent-light)",
+                            color: "var(--accent)",
+                          }}
+                        >
+                          {keyword}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {mode === "video" && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="panel-soft rounded-lg p-4">
+                  <h3 className="text-xs font-semibold text-app-text mb-3">视频模式</h3>
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setVideoMode("reference")}
+                      className="rounded-md px-3 py-2 text-xs font-medium transition-base"
+                      style={{
+                        background: videoMode === "reference" ? "var(--accent-light)" : "var(--bg-tertiary)",
+                        color: videoMode === "reference" ? "var(--accent)" : "var(--text-secondary)",
+                      }}
+                    >
+                      参考图 / 多图
                     </button>
-                  );
-                })}
-              </div>
-
-              <div className="mt-6 rounded-[1.4rem] border border-app-border bg-app-bg px-4 py-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-[11px] uppercase tracking-[0.2em] text-app-text3">Current Output</div>
-                    <div className="mt-2 text-lg font-semibold text-app-text">{mode === "video" ? `${videoWidth}×${videoHeight}` : outputSize || "1024×1024"}</div>
-                  </div>
-                  <span className="rounded-full bg-[var(--accent-light)] px-3 py-1 text-xs text-[var(--accent)]">
-                    {mode === "video" ? `${videoDuration}s` : `${selected.length} 词`}
-                  </span>
-                </div>
-                <p className="mt-3 text-xs leading-6 text-app-text3">
-                  {mode === "video"
-                    ? "Agnes 视频要求帧数满足 (n-1) 可被 8 整除，页面已按这一规则限制。"
-                    : "比例和清晰度词只作为参数提交，不混入自然语言提示词。"}
-                </p>
-              </div>
-            </aside>
-
-            <section className="space-y-6">
-              {(mode === "keywords" || mode === "img2img") && (
-                <section className="glass-panel overflow-hidden rounded-[2rem]">
-                  <div className="flex items-start justify-between gap-4 border-b border-app-border px-6 py-5">
-                    <div>
-                      <div className="text-[11px] uppercase tracking-[0.22em] text-app-text3">Keyword System</div>
-                      <h2 className="mt-2 text-2xl font-semibold text-app-text">结构化选词</h2>
-                      <p className="mt-2 text-sm leading-7 text-app-text2">按创作顺序完成画面定义，避免旧版标签体系杂乱堆叠。</p>
-                    </div>
-                    <div className="rounded-[1.1rem] border border-app-border bg-app-bg px-4 py-3 text-right">
-                      <div className="text-[11px] uppercase tracking-[0.2em] text-app-text3">Selected</div>
-                      <div className="mt-2 text-xl font-semibold text-app-text">{semanticSelected.length}</div>
-                      <div className="text-xs text-app-text3">语义词 / {selected.length} 总计</div>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setVideoMode("keyframes")}
+                      className="rounded-md px-3 py-2 text-xs font-medium transition-base"
+                      style={{
+                        background: videoMode === "keyframes" ? "var(--accent-light)" : "var(--bg-tertiary)",
+                        color: videoMode === "keyframes" ? "var(--accent)" : "var(--text-secondary)",
+                      }}
+                    >
+                      关键帧动画
+                    </button>
                   </div>
 
-                  <div className="space-y-6 px-6 py-6">
-                    {mode === "img2img" && (
-                      <div className="rounded-[1.5rem] border border-app-border bg-app-bg px-5 py-5">
-                        <div className="mb-3 flex items-center justify-between gap-3">
-                          <div>
-                            <h3 className="text-sm font-semibold text-app-text">参考图输入</h3>
-                            <p className="mt-1 text-xs leading-6 text-app-text3">上传底图，或直接粘贴图片 URL / Data URI 做局部改造。</p>
-                          </div>
-                          <span className="rounded-full border border-app-border px-3 py-1 text-xs text-app-text3">{refImages.length} 张</span>
-                        </div>
-                        <ImageUploader images={refImages} onChange={setRefImages} />
-                      </div>
-                    )}
-
-                    <KeywordSelector groups={groups} selected={selected} onToggle={toggleKeyword} onClear={clearSelectedKeywords} />
-
-                    {selected.length > 0 && (
-                      <div className="rounded-[1.5rem] border border-app-border bg-app-bg px-5 py-5">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <h3 className="text-sm font-semibold text-app-text">当前画面要素</h3>
-                            <p className="mt-1 text-xs leading-6 text-app-text3">保留这些词作为当前构图基础。再次点击即可移除。</p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={clearSelectedKeywords}
-                            className="rounded-full border border-app-border px-3 py-1.5 text-xs text-app-text2 transition hover:border-[var(--border-hover)] hover:text-app-text"
-                          >
-                            清空
-                          </button>
-                        </div>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          {selected.map((keyword) => (
-                            <button
-                              key={keyword}
-                              type="button"
-                              onClick={() => toggleKeyword(keyword)}
-                              className="rounded-full border border-[var(--accent)] bg-[var(--accent-light)] px-3 py-2 text-xs text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white"
-                            >
-                              {keyword}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </section>
-              )}
-
-              {mode === "video" && (
-                <section className="glass-panel overflow-hidden rounded-[2rem]">
-                  <div className="flex items-start justify-between gap-4 border-b border-app-border px-6 py-5">
-                    <div>
-                      <div className="text-[11px] uppercase tracking-[0.22em] text-app-text3">Video Pipeline</div>
-                      <h2 className="mt-2 text-2xl font-semibold text-app-text">视频参数控制</h2>
-                      <p className="mt-2 text-sm leading-7 text-app-text2">适配 Agnes 视频生成，兼容纯文本、参考图和关键帧工作流。</p>
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <h4 className="text-[11px] text-app-text3">参考图 URL</h4>
+                      <span className="text-[10px] text-app-text3">{videoRefImages.length} 条</span>
                     </div>
-                    <span className="rounded-full bg-[var(--accent-light)] px-4 py-2 text-sm font-medium text-[var(--accent)]">约 {videoDuration} 秒</span>
-                  </div>
-
-                  <div className="grid gap-6 px-6 py-6 xl:grid-cols-[0.95fr_1.05fr]">
-                    <div className="space-y-5">
-                      <div className="grid grid-cols-2 gap-3 rounded-[1.35rem] border border-app-border bg-app-bg p-1.5">
-                        {([
-                          ["reference", "参考图 / 多图"],
-                          ["keyframes", "关键帧动画"],
-                        ] as ["reference" | "keyframes", string][]).map(([key, label]) => (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() => setVideoMode(key)}
-                            className="rounded-[1rem] px-4 py-3 text-sm font-semibold transition"
-                            style={{
-                              background: videoMode === key ? "var(--accent-light)" : "transparent",
-                              color: videoMode === key ? "var(--accent)" : "var(--text-secondary)",
-                            }}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="rounded-[1.5rem] border border-app-border bg-app-bg px-5 py-5">
-                        <div className="mb-3 flex items-center justify-between gap-3">
-                          <div>
-                            <h3 className="text-sm font-semibold text-app-text">参考图 URL</h3>
-                            <p className="mt-1 text-xs leading-6 text-app-text3">视频模式只接受公网 URL，不走本地上传。</p>
-                          </div>
-                          <span className="rounded-full border border-app-border px-3 py-1 text-xs text-app-text3">{videoRefImages.length} 条</span>
-                        </div>
-                        <ImageUploader images={videoRefImages} onChange={setVideoRefImages} allowUpload={false} allowDataUri={false} hint="视频参考图仅支持公网 URL" />
-                        <p className="mt-3 text-xs leading-6 text-app-text3">
-                          {videoRefImages.length === 0
-                            ? "不添加参考图时，直接按文本生成视频。"
-                            : videoMode === "keyframes"
-                              ? "关键帧至少两张图，建议风格和主体保持连续。"
-                              : "多图可稳定主体造型、色调和镜头氛围。"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="rounded-[1.5rem] border border-app-border bg-app-bg px-5 py-5">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h3 className="text-sm font-semibold text-app-text">输出规格</h3>
-                          <p className="mt-1 text-xs leading-6 text-app-text3">当前参数满足 Agnes 的帧数和帧率范围要求。</p>
-                        </div>
-                        <span className="rounded-full border border-app-border px-3 py-1 text-xs text-app-text3">{videoWidth}×{videoHeight}</span>
-                      </div>
-
-                      <div className="mt-5 grid grid-cols-2 gap-4">
-                        <label className="block text-xs text-app-text3">
-                          宽度
-                          <select value={videoWidth} onChange={(e) => setVideoWidth(Number(e.target.value))} className="mt-2 w-full rounded-xl border border-app-border bg-app-bg2 px-3 py-3 text-sm text-app-text focus:border-[var(--border-hover)] focus:outline-none">
-                            <option value={768}>768</option>
-                            <option value={1080}>1080</option>
-                            <option value={1152}>1152</option>
-                            <option value={1920}>1920</option>
-                          </select>
-                        </label>
-                        <label className="block text-xs text-app-text3">
-                          高度
-                          <select value={videoHeight} onChange={(e) => setVideoHeight(Number(e.target.value))} className="mt-2 w-full rounded-xl border border-app-border bg-app-bg2 px-3 py-3 text-sm text-app-text focus:border-[var(--border-hover)] focus:outline-none">
-                            <option value={576}>576</option>
-                            <option value={768}>768</option>
-                            <option value={1080}>1080</option>
-                            <option value={1152}>1152</option>
-                          </select>
-                        </label>
-                        <label className="block text-xs text-app-text3">
-                          帧数
-                          <select value={videoFrames} onChange={(e) => setVideoFrames(Number(e.target.value))} className="mt-2 w-full rounded-xl border border-app-border bg-app-bg2 px-3 py-3 text-sm text-app-text focus:border-[var(--border-hover)] focus:outline-none">
-                            <option value={81}>81 (3.4s)</option>
-                            <option value={121}>121 (5s)</option>
-                            <option value={201}>201 (8.4s)</option>
-                            <option value={401}>401 (16.7s)</option>
-                          </select>
-                        </label>
-                        <label className="block text-xs text-app-text3">
-                          帧率
-                          <select value={videoFps} onChange={(e) => setVideoFps(Number(e.target.value))} className="mt-2 w-full rounded-xl border border-app-border bg-app-bg2 px-3 py-3 text-sm text-app-text focus:border-[var(--border-hover)] focus:outline-none">
-                            <option value={8}>8 fps</option>
-                            <option value={16}>16 fps</option>
-                            <option value={24}>24 fps</option>
-                            <option value={30}>30 fps</option>
-                          </select>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              <section className="glass-panel overflow-hidden rounded-[2rem] accent-ring">
-                <div className="flex items-start justify-between gap-4 border-b border-app-border px-6 py-5">
-                  <div>
-                    <div className="text-[11px] uppercase tracking-[0.22em] text-app-text3">Prompt Console</div>
-                    <h2 className="mt-2 text-2xl font-semibold text-app-text">
-                      {mode === "video" ? "画面与镜头脚本" : mode === "img2img" ? "编辑指令台" : "提示词控制台"}
-                    </h2>
-                    <p className="mt-2 text-sm leading-7 text-app-text2">
-                      {mode === "keywords"
-                        ? "先让系统按结构化关键词生成底稿，再手动微调语气、镜头和细节。"
-                        : MODE_META[mode].desc}
+                    <ImageUploader
+                      images={videoRefImages}
+                      onChange={setVideoRefImages}
+                      allowUpload={false}
+                      allowDataUri={false}
+                      hint="视频参考图仅支持公网 URL"
+                    />
+                    <p className="mt-2 text-[11px] leading-4 text-app-text3">
+                      {videoRefImages.length === 0
+                        ? "不添加参考图时，直接按文本生成视频。"
+                        : videoMode === "keyframes"
+                          ? "关键帧至少两张图，建议风格和主体保持连续。"
+                          : "多图可稳定主体造型、色调和镜头氛围。"}
                     </p>
                   </div>
-                  <div className="rounded-[1.1rem] border border-app-border bg-app-bg px-4 py-3 text-right">
-                    <div className="text-[11px] uppercase tracking-[0.2em] text-app-text3">Characters</div>
-                    <div className="mt-2 text-xl font-semibold text-app-text">{prompt.length}</div>
-                    <div className="text-xs text-app-text3">当前文本长度</div>
-                  </div>
-                </div>
 
-                <div className="px-6 py-6">
-                  <textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    rows={mode === "video" ? 12 : 10}
-                    className="min-h-[20rem] w-full rounded-[1.7rem] border border-app-border bg-app-bg px-5 py-5 text-base leading-8 text-app-text placeholder:text-app-text3 focus:border-[var(--border-hover)] focus:outline-none"
-                    placeholder={mode === "video" ? "描述主体动作、镜头运动、光线变化、景别切换和结尾状态..." : mode === "img2img" ? "描述保留什么、改动什么，例如脸部不变，只替换服装和环境..." : "输入完整提示词，或先从关键词自动生成..."}
-                  />
-
-                  <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-app-text3">
-                    <span className="rounded-full border border-app-border px-3 py-1.5">{prompt.length} 字符</span>
-                    <span className="rounded-full border border-app-border px-3 py-1.5">{mode === "video" ? `${videoWidth}×${videoHeight} / ${videoDuration}s` : outputSize || "默认 1024×1024"}</span>
-                    <span className="rounded-full border border-app-border px-3 py-1.5">{loggedIn ? "已登录，可直接提交" : "未登录，仅可浏览"}</span>
-                  </div>
-
-                  <div className="mt-6 flex flex-wrap gap-3">
-                    {mode === "keywords" && (
-                      <button
-                        onClick={handleGeneratePrompt}
-                        disabled={loading || selected.length === 0 || !loggedIn}
-                        className="rounded-full border border-app-border bg-app-bg2 px-5 py-3 text-sm font-medium text-app-text2 transition hover:border-[var(--border-hover)] hover:text-app-text disabled:cursor-not-allowed disabled:opacity-45"
+                  <h4 className="text-[11px] text-app-text3 mb-2">输出规格</h4>
+                  <div className="grid grid-cols-4 gap-2">
+                    <label className="block">
+                      <span className="text-[10px] text-app-text3">宽</span>
+                      <select
+                        value={videoWidth}
+                        onChange={(e) => setVideoWidth(Number(e.target.value))}
+                        className="mt-1 w-full rounded-md border border-app-border bg-[var(--bg-tertiary)] px-2 py-1.5 text-xs text-app-text focus:border-[var(--border-hover)] focus:outline-none"
                       >
-                        {loading && statusText === "正在生成提示词..." ? "正在生成提示词" : "生成提示词底稿"}
-                      </button>
-                    )}
-                    <button
-                      onClick={handlePolish}
-                      disabled={loading || !prompt.trim()}
-                      className="rounded-full border border-app-border bg-app-bg2 px-5 py-3 text-sm font-medium text-app-text2 transition hover:border-[var(--border-hover)] hover:text-app-text disabled:cursor-not-allowed disabled:opacity-45"
-                    >
-                      {loading && statusText === "AI 润色中..." ? "润色中" : "AI 润色"}
-                    </button>
-                    <button
-                      onClick={handleGenerate}
-                      disabled={loading || !loggedIn || (!prompt.trim() && mode !== "img2img")}
-                      className="rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:bg-app-bg2 disabled:text-app-text3"
-                    >
-                      {!loggedIn
-                        ? "请先登录"
-                        : loading && statusText !== "AI 润色中..." && statusText !== "正在生成提示词..."
-                          ? statusText
-                          : mode === "video"
-                            ? "提交视频任务"
-                            : "提交图片任务"}
-                    </button>
+                        <option value={768}>768</option>
+                        <option value={1080}>1080</option>
+                        <option value={1152}>1152</option>
+                        <option value={1920}>1920</option>
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="text-[10px] text-app-text3">高</span>
+                      <select
+                        value={videoHeight}
+                        onChange={(e) => setVideoHeight(Number(e.target.value))}
+                        className="mt-1 w-full rounded-md border border-app-border bg-[var(--bg-tertiary)] px-2 py-1.5 text-xs text-app-text focus:border-[var(--border-hover)] focus:outline-none"
+                      >
+                        <option value={576}>576</option>
+                        <option value={768}>768</option>
+                        <option value={1080}>1080</option>
+                        <option value={1152}>1152</option>
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="text-[10px] text-app-text3">帧数</span>
+                      <select
+                        value={videoFrames}
+                        onChange={(e) => setVideoFrames(Number(e.target.value))}
+                        className="mt-1 w-full rounded-md border border-app-border bg-[var(--bg-tertiary)] px-2 py-1.5 text-xs text-app-text focus:border-[var(--border-hover)] focus:outline-none"
+                      >
+                        <option value={81}>81</option>
+                        <option value={121}>121</option>
+                        <option value={201}>201</option>
+                        <option value={401}>401</option>
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="text-[10px] text-app-text3">fps</span>
+                      <select
+                        value={videoFps}
+                        onChange={(e) => setVideoFps(Number(e.target.value))}
+                        className="mt-1 w-full rounded-md border border-app-border bg-[var(--bg-tertiary)] px-2 py-1.5 text-xs text-app-text focus:border-[var(--border-hover)] focus:outline-none"
+                      >
+                        <option value={8}>8</option>
+                        <option value={16}>16</option>
+                        <option value={24}>24</option>
+                        <option value={30}>30</option>
+                      </select>
+                    </label>
                   </div>
                 </div>
-              </section>
-
-              <section className="glass-panel rounded-[2rem] px-6 py-6">
-                <div className="flex items-end justify-between gap-4 border-b border-app-border pb-4">
-                  <div>
-                    <div className="text-[11px] uppercase tracking-[0.22em] text-app-text3">Gallery</div>
-                    <h2 className="mt-2 text-2xl font-semibold text-app-text">生成结果</h2>
-                    <p className="mt-1 text-sm text-app-text3">桌面端支持更宽的瀑布流预览，便于筛图和对比。</p>
-                  </div>
-                  <span className="rounded-full border border-app-border px-3 py-1.5 text-xs text-app-text3">{records.length} 个作品</span>
-                </div>
-                <div className="mt-5">
-                  <MasonryGallery records={records} liveTasks={[]} onDelete={handleDeleteHistory} onDeleteTask={handleDeleteTask} />
-                </div>
-              </section>
-            </section>
-
-            <aside className="glass-panel sticky top-24 overflow-hidden rounded-[2rem]">
-              <div className="border-b border-app-border px-5 py-5">
-                <div className="text-[11px] uppercase tracking-[0.22em] text-app-text3">Task Queue</div>
-                <h2 className="mt-2 text-xl font-semibold text-app-text">任务队列</h2>
-                <p className="mt-1 text-sm text-app-text3">正在提交和失败的任务会在这里跟踪。</p>
               </div>
+            )}
 
-              <div className="border-b border-app-border px-5 py-4">
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="rounded-[1rem] bg-app-bg px-3 py-3">
-                    <div className="text-lg font-semibold text-app-text">{activeTasks.length}</div>
-                    <div className="text-[11px] text-app-text3">进行中</div>
-                  </div>
-                  <div className="rounded-[1rem] bg-app-bg px-3 py-3">
-                    <div className="text-lg font-semibold text-app-text">{failedTasks.length}</div>
-                    <div className="text-[11px] text-app-text3">失败</div>
-                  </div>
-                  <div className="rounded-[1rem] bg-app-bg px-3 py-3">
-                    <div className="text-lg font-semibold text-app-text">{records.length}</div>
-                    <div className="text-[11px] text-app-text3">成品</div>
-                  </div>
+            {/* Prompt Console */}
+            <div className="panel-soft rounded-lg p-0.5 transition-base focus-within:accent-ring">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={mode === "video" ? 10 : 8}
+                className="w-full min-h-[12rem] rounded-[7px] border-0 bg-transparent px-4 py-4 text-sm leading-7 text-app-text placeholder:text-app-text3 resize-none focus:outline-none"
+                placeholder={
+                  mode === "video"
+                    ? "描述画面主体动作、镜头运动、光线变化和景别切换..."
+                    : mode === "img2img"
+                      ? "描述保留什么、改动什么，例如：保持脸部不变，只替换服装和环境..."
+                      : mode === "manual"
+                        ? "直接输入完整提示词..."
+                        : "先选择关键词，然后点击「生成提示词」自动生成底稿，或直接手写..."
+                }
+              />
+
+              <div className="flex items-center justify-between gap-3 border-t border-app-border/60 px-4 py-3">
+                <div className="flex items-center gap-3 text-[11px] text-app-text3">
+                  <span className="font-mono tabular-nums">{prompt.length} 字符</span>
+                  <span className="text-app-border">|</span>
+                  <span className="font-mono">
+                    {mode === "video" ? `${videoWidth}×${videoHeight} / ${videoDuration}s` : outputSize || "1024×1024"}
+                  </span>
+                  <span className="text-app-border">|</span>
+                  <span style={{ color: loggedIn ? "var(--success)" : "var(--text-muted)" }}>
+                    {loggedIn ? "已登录" : "未登录"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {mode === "keywords" && (
+                    <button
+                      onClick={handleGeneratePrompt}
+                      disabled={loading || selected.length === 0 || !loggedIn}
+                      className="rounded-md border border-app-border px-3 py-1.5 text-xs font-medium text-app-text2 transition-base hover:border-[var(--border-hover)] hover:text-app-text disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {loading && statusText === "正在生成提示词..." ? "生成中..." : "生成提示词"}
+                    </button>
+                  )}
+                  <button
+                    onClick={handlePolish}
+                    disabled={loading || !prompt.trim()}
+                    className="rounded-md border border-app-border px-3 py-1.5 text-xs font-medium text-app-text2 transition-base hover:border-[var(--border-hover)] hover:text-app-text disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {loading && statusText === "AI 润色中..." ? "润色中..." : "AI 润色"}
+                  </button>
+                  <button
+                    onClick={handleGenerate}
+                    disabled={loading || !loggedIn || (!prompt.trim() && mode !== "img2img")}
+                    className="rounded-md bg-[var(--accent)] px-5 py-1.5 text-xs font-semibold text-white transition-base hover:bg-[var(--accent-hover)] hover:shadow-[0_0_16px_var(--accent-glow)] disabled:bg-[var(--bg-tertiary)] disabled:text-app-text3 disabled:shadow-none disabled:cursor-not-allowed"
+                  >
+                    {!loggedIn
+                      ? "请先登录"
+                      : loading && statusText !== "AI 润色中..." && statusText !== "正在生成提示词..."
+                        ? statusText
+                        : mode === "video"
+                          ? "提交视频任务"
+                          : "提交图片任务"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Gallery */}
+            <div>
+              <MasonryGallery
+                records={records}
+                liveTasks={[]}
+                onDelete={handleDeleteHistory}
+                onDeleteTask={handleDeleteTask}
+              />
+            </div>
+          </div>
+
+          {/* ── RIGHT SIDEBAR ── */}
+          <aside className="col-span-3 border-l border-app-border/50 sticky top-16 h-[calc(100vh-64px)] overflow-y-auto py-5 pl-5">
+            <div className="pr-6 space-y-4">
+              <h3 className="text-[10px] uppercase tracking-[0.22em] text-app-text3">任务队列</h3>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="panel-soft rounded-md px-2.5 py-3 text-center">
+                  <div className="text-sm font-mono font-semibold tabular-nums text-app-text">{activeTasks.length}</div>
+                  <div className="text-[10px] text-app-text3 mt-0.5">进行中</div>
+                </div>
+                <div className="panel-soft rounded-md px-2.5 py-3 text-center">
+                  <div className="text-sm font-mono font-semibold tabular-nums text-app-text">{failedTasks.length}</div>
+                  <div className="text-[10px] text-app-text3 mt-0.5">失败</div>
+                </div>
+                <div className="panel-soft rounded-md px-2.5 py-3 text-center">
+                  <div className="text-sm font-mono font-semibold tabular-nums text-app-text">{records.length}</div>
+                  <div className="text-[10px] text-app-text3 mt-0.5">成品</div>
                 </div>
               </div>
 
               {queueTasks.length === 0 ? (
-                <div className="px-5 py-14 text-center text-sm text-app-text3">当前没有排队任务。</div>
+                <div className="py-12 text-center">
+                  <p className="text-xs text-app-text3">当前没有排队任务</p>
+                  <p className="mt-1 text-[11px] text-app-text3/60">提交生成后将在此处跟踪进度</p>
+                </div>
               ) : (
-                <div className="max-h-[calc(100vh-18rem)] overflow-y-auto px-4 py-4">
-                  <div className="space-y-3">
-                    {queueTasks.map((task) => (
-                      <div key={task.id} className="rounded-[1.4rem] border border-app-border bg-app-bg px-4 py-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-[11px] uppercase tracking-[0.16em] text-app-text3">Task #{task.id}</span>
-                          <button onClick={() => handleDeleteTask(task.id)} className="text-xs text-app-text3 transition hover:text-app-text">
+                <div className="space-y-2.5">
+                  {queueTasks.map((task) => (
+                    <div key={task.id} className="panel-soft rounded-lg p-3.5 space-y-2.5 animate-fade-in">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="rounded-sm px-1.5 py-0.5 text-[10px] font-medium"
+                            style={{
+                              background: task.type === "video" ? "var(--accent-light)" : "var(--success-bg)",
+                              color: task.type === "video" ? "var(--accent)" : "var(--success)",
+                            }}
+                          >
+                            {task.type === "video" ? "视频" : "图片"}
+                          </span>
+                          <span className="text-[10px] text-app-text3">#{task.id}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="text-[10px]"
+                            style={{
+                              color: task.status === "failed" ? "var(--danger)" : task.status === "processing" ? "var(--accent)" : "var(--text-muted)",
+                            }}
+                          >
+                            {task.status === "failed" ? "失败" : task.status === "processing" ? "处理中" : "排队中"}
+                          </span>
+                          <button
+                            onClick={() => handleDeleteTask(task.id)}
+                            className="text-[10px] text-app-text3 transition-base hover:text-[var(--danger)]"
+                          >
                             删除
                           </button>
                         </div>
-                        <div className="mt-3 flex items-center gap-2">
-                          <span className="rounded-full bg-[var(--accent-light)] px-2.5 py-1 text-[11px] text-[var(--accent)]">
-                            {task.type === "video" ? "视频" : "图片"}
-                          </span>
-                          <span className="rounded-full border border-app-border px-2.5 py-1 text-[11px] text-app-text3">
-                            {task.status === "failed" ? "失败" : task.status === "processing" ? "处理中" : "排队中"}
-                          </span>
-                        </div>
-                        <p className="mt-3 line-clamp-3 text-sm leading-6 text-app-text2">{task.prompt || task.keywordNames || "等待处理"}</p>
-                        <div className="mt-4 flex items-center justify-between gap-3 text-xs text-app-text3">
+                      </div>
+
+                      <p className="text-xs leading-5 text-app-text2 line-clamp-2">{task.prompt || task.keywordNames || "等待处理"}</p>
+
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-[10px] text-app-text3">
                           <span>{task.progress || 0}%</span>
-                          <span>{task.status === "failed" ? "需要检查配置或参数" : "任务状态正常轮询中"}</span>
+                          {task.status === "failed" && <span>任务失败</span>}
                         </div>
-                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-app-bg2">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-[var(--bg-tertiary)]">
                           <div
-                            className="h-full rounded-full transition-all"
+                            className="h-full rounded-full transition-all duration-500"
                             style={{
-                              width: `${Math.max(6, Math.min(100, task.progress || (task.status === "failed" ? 100 : 10)))}%`,
+                              width: `${Math.max(4, Math.min(100, task.progress || (task.status === "failed" ? 100 : 8)))}%`,
                               background: task.status === "failed" ? "var(--danger)" : "var(--accent)",
                             }}
                           />
                         </div>
-                        {task.error && <p className="mt-3 text-xs leading-6 text-red-400">{task.error}</p>}
                       </div>
-                    ))}
-                  </div>
+
+                      {task.error && (
+                        <p className="text-[11px] leading-4 text-[var(--danger)]">{task.error}</p>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
-            </aside>
-          </section>
+            </div>
+          </aside>
         </main>
       </div>
 
+      {/* ═══════════ MOBILE ═══════════ */}
       <div className="lg:hidden">
         <MobileHome
           loggedIn={loggedIn}

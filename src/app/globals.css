@@ -2,122 +2,152 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design tokens (dark default) ── */
 :root,
 [data-theme="dark"] {
-  --bg-primary: #0f1415;
-  --bg-secondary: #152022;
-  --bg-tertiary: #1d2c2f;
-  --bg-elevated: rgba(23, 33, 36, 0.86);
-  --border: rgba(117, 145, 136, 0.18);
-  --border-hover: rgba(191, 209, 203, 0.34);
-  --text-primary: #f2efe6;
-  --text-secondary: #c5cdc7;
-  --text-muted: #8e9b96;
+  --bg-primary: #0a0e0f;
+  --bg-secondary: #101618;
+  --bg-tertiary: #181f22;
+  --bg-elevated: rgba(16, 22, 24, 0.88);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+  --text-primary: #eae6dd;
+  --text-secondary: #a1a89e;
+  --text-muted: #5e6760;
   --accent: #d96b2b;
   --accent-hover: #bf5b1f;
-  --accent-light: rgba(217, 107, 43, 0.16);
-  --accent-glow: rgba(217, 107, 43, 0.28);
+  --accent-light: rgba(217, 107, 43, 0.12);
+  --accent-glow: rgba(217, 107, 43, 0.2);
   --highlight: #88c0a8;
   --danger: #ef4444;
-  --danger-bg: rgba(239, 68, 68, 0.15);
+  --danger-bg: rgba(239, 68, 68, 0.1);
   --success: #22c55e;
-  --success-bg: rgba(34, 197, 94, 0.15);
+  --success-bg: rgba(34, 197, 94, 0.1);
 }
 
 [data-theme="light"] {
-  --bg-primary: #f5efe3;
-  --bg-secondary: #fffcf5;
-  --bg-tertiary: #efe4d2;
-  --bg-elevated: rgba(255, 252, 245, 0.88);
-  --border: rgba(122, 103, 84, 0.18);
-  --border-hover: rgba(122, 103, 84, 0.36);
-  --text-primary: #2d2419;
-  --text-secondary: #645546;
-  --text-muted: #9a8b7c;
-  --accent: #e8833a;
-  --accent-hover: #d4722b;
-  --accent-light: rgba(232, 131, 58, 0.15);
-  --accent-glow: rgba(232, 131, 58, 0.2);
+  --bg-primary: #f6f3ec;
+  --bg-secondary: #fefcf7;
+  --bg-tertiary: #eee7d8;
+  --bg-elevated: rgba(254, 252, 247, 0.88);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.14);
+  --text-primary: #1f1913;
+  --text-secondary: #5c4e41;
+  --text-muted: #8e8072;
+  --accent: #e07b30;
+  --accent-hover: #cc6e28;
+  --accent-light: rgba(224, 123, 48, 0.1);
+  --accent-glow: rgba(224, 123, 48, 0.14);
   --highlight: #3e7d67;
   --danger: #dc2626;
-  --danger-bg: rgba(220, 38, 38, 0.1);
+  --danger-bg: rgba(220, 38, 38, 0.08);
   --success: #16a34a;
-  --success-bg: rgba(22, 163, 74, 0.1);
+  --success-bg: rgba(22, 163, 74, 0.08);
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html {
-  scroll-behavior: smooth;
-}
+/* ── Reset & base ── */
+*,*::before,*::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: "Avenir Next", "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
-  background-image:
-    radial-gradient(circle at top left, rgba(217, 107, 43, 0.15), transparent 26%),
-    radial-gradient(circle at right 18%, rgba(136, 192, 168, 0.14), transparent 24%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 30%);
+  font-family: "Inter", "SF Pro Display", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  position: relative;
 }
 
-body::before {
+/* Subtle top-left accent glow */
+body::after {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.45), transparent 82%);
-  opacity: 0.22;
+  background: radial-gradient(ellipse 80% 60% at 20% 0%, rgba(217, 107, 43, 0.06), transparent 50%),
+              radial-gradient(ellipse 50% 40% at 85% 15%, rgba(136, 192, 168, 0.04), transparent 50%);
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+a { color: inherit; text-decoration: none; }
+button, input, textarea, select { font: inherit; }
+
+::selection { background: var(--accent-light); color: var(--text-primary); }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 999px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Focus ring ── */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
+/* ── Animation keyframes ── */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
 }
 
-::selection {
-  background: var(--accent-light);
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--border-hover);
-  border-radius: 999px;
+/* ── Utility classes ── */
+.animate-skeleton {
+  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
 }
 
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out;
+}
+
+.transition-base {
+  transition: all 0.2s ease-in-out;
+}
+
+/* ── Glass panel ── */
 .glass-panel {
   background: var(--bg-elevated);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
   border: 1px solid var(--border);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
 }
 
+/* ── Soft panel ── */
 .panel-soft {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
 }
 
+/* ── Accent ring (subtle glow) ── */
 .accent-ring {
-  box-shadow: 0 0 0 1px var(--accent-light), 0 16px 40px rgba(0, 0, 0, 0.14);
+  box-shadow: 0 0 0 1px var(--accent-light);
+}
+
+.accent-ring:hover {
+  box-shadow: 0 0 0 1px var(--accent-light), 0 0 16px var(--accent-glow);
+}
+
+/* ── Divider line ── */
+.divider {
+  height: 1px;
+  background: var(--border);
+  border: none;
+  margin: 0;
 }
