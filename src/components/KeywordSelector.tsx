@@ -50,21 +50,20 @@ export default function KeywordSelector({ groups, selected, onToggle, onClear }:
     const selectedCount = facetSelectedCount(facet, selected);
 
     return (
-      <section key={facet.slug} className="rounded-[1.4rem] border border-app-border bg-app-bg px-4 py-4 transition hover:border-[var(--border-hover)]">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h4 className="text-sm font-semibold text-app-text">{facet.name}</h4>
-              <span className="rounded-full bg-app-bg2 px-2.5 py-1 text-[11px] text-app-text3">
-                {facet.selectionMode === "single" ? "单选" : `最多 ${facet.maxSelect || facet.keywords.length} 个`}
-              </span>
-            </div>
-            {facet.description && <p className="mt-1 text-xs leading-5 text-app-text3">{facet.description}</p>}
+      <div key={facet.slug} className="space-y-1">
+        <div className="flex items-center justify-between gap-1">
+          <div className="flex items-baseline gap-1.5 min-w-0">
+            <span className="text-[11px] font-medium text-app-text2 truncate">{facet.name}</span>
+            <span className="text-[9px] text-app-text3 shrink-0">
+              {facet.selectionMode === "single" ? "单选" : `≤${facet.maxSelect || facet.keywords.length}`}
+            </span>
           </div>
-          <span className="text-[11px] text-app-text3">{selectedCount}/{facet.selectionMode === "single" ? 1 : (facet.maxSelect || facet.keywords.length)}</span>
+          <span className="text-[9px] tabular-nums text-app-text3 shrink-0">
+            {selectedCount}/{facet.selectionMode === "single" ? 1 : (facet.maxSelect || facet.keywords.length)}
+          </span>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1">
           {facet.keywords.map((kw) => {
             const active = selected.includes(kw.name);
             return (
@@ -72,12 +71,11 @@ export default function KeywordSelector({ groups, selected, onToggle, onClear }:
                 key={kw.id}
                 type="button"
                 onClick={() => onToggle(kw.name)}
-                className="rounded-full border px-3 py-2 text-sm transition-all hover:-translate-y-px"
+                className="rounded-sm border px-1.5 py-0.5 text-[11px] font-medium transition-base"
                 style={{
-                  background: active ? "var(--accent-light)" : "var(--bg-secondary)",
-                  borderColor: active ? "var(--accent)" : "var(--border)",
+                  background: active ? "var(--accent-light)" : "var(--bg-tertiary)",
+                  borderColor: active ? "var(--accent)" : "transparent",
                   color: active ? "var(--accent)" : "var(--text-secondary)",
-                  boxShadow: active ? "0 0 0 1px var(--accent) inset" : "none",
                 }}
               >
                 {kw.name}
@@ -85,78 +83,84 @@ export default function KeywordSelector({ groups, selected, onToggle, onClear }:
             );
           })}
         </div>
-      </section>
+      </div>
     );
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex-1">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜索关键词，例如 逆光、85mm、电影感"
-            className="w-full rounded-2xl border border-app-border bg-app-bg px-4 py-3 text-sm text-app-text placeholder:text-app-text3 focus:border-[var(--border-hover)] focus:outline-none"
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-app-text3">
-          <span className="rounded-full border border-app-border px-2.5 py-1">{groups.length} 个分类</span>
-          <span className="h-3 w-px bg-app-border" />
-          <span className="rounded-full border border-app-border px-2.5 py-1">{selected.length} 个已选</span>
+    <div className="space-y-2">
+      {/* Search bar — compact */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="搜索关键词..."
+          className="flex-1 min-w-[140px] rounded-md border border-app-border/60 bg-[var(--bg-tertiary)] px-2.5 py-1.5 text-xs text-app-text placeholder:text-app-text3 focus:border-[var(--border-hover)] focus:outline-none"
+        />
+        <span className="text-[10px] text-app-text3 tabular-nums">{groups.length}组</span>
+        <span className="text-[10px] text-app-text3 tabular-nums">{selected.length}已选</span>
+        <button
+          type="button"
+          onClick={() => setShowSelectedOnly((prev) => !prev)}
+          className="rounded-sm border border-app-border/60 px-2 py-1 text-[10px] text-app-text3 transition-base hover:border-[var(--border-hover)] hover:text-app-text2"
+        >
+          {showSelectedOnly ? "全部" : "已选"}
+        </button>
+        {selected.length > 0 && onClear && (
           <button
             type="button"
-            onClick={() => setShowSelectedOnly((prev) => !prev)}
-            className="rounded-full border border-app-border bg-app-bg px-3 py-1.5 text-xs text-app-text2 transition hover:border-[var(--border-hover)] hover:text-app-text"
+            onClick={onClear}
+            className="rounded-sm border border-app-border/60 px-2 py-1 text-[10px] text-app-text3 transition-base hover:border-[var(--danger)] hover:text-[var(--danger)]"
           >
-            {showSelectedOnly ? "查看全部" : "仅看已选"}
+            清空
           </button>
-          {selected.length > 0 && onClear && (
-            <button
-              type="button"
-              onClick={onClear}
-              className="rounded-full border border-app-border bg-app-bg px-3 py-1.5 text-xs text-app-text2 transition hover:border-[var(--border-hover)] hover:text-app-text"
-            >
-              清空
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
-      {nonParameterGroups.map((group) => {
-        const groupSelected = (group.facets || []).reduce((sum, facet) => sum + facetSelectedCount(facet, selected), 0);
+      {/* Non-parameter groups — 2-column grid */}
+      {nonParameterGroups.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {nonParameterGroups.map((group) => {
+            const groupSelected = (group.facets || []).reduce((sum, facet) => sum + facetSelectedCount(facet, selected), 0);
 
-        return (
-          <section key={group.id} className="border-b border-app-border pb-6 last:border-b-0 last:pb-0">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-base font-semibold text-app-text">{group.name}</h3>
-                {group.description && <p className="mt-1 text-xs leading-5 text-app-text3">{group.description}</p>}
+            return (
+              <div key={group.id} className="panel-soft rounded-md p-2.5 space-y-2">
+                <div className="flex items-center justify-between gap-1">
+                  <div className="flex items-baseline gap-1.5 min-w-0">
+                    <h3 className="text-xs font-semibold text-app-text truncate">{group.name}</h3>
+                    {group.description && (
+                      <span className="text-[9px] text-app-text3 truncate hidden sm:inline">{group.description}</span>
+                    )}
+                  </div>
+                  <span className="text-[9px] tabular-nums text-app-text3 shrink-0">{groupSelected}选</span>
+                </div>
+                <div className="space-y-2">
+                  {(group.facets || []).map(renderFacet)}
+                </div>
               </div>
-              <span className="rounded-full bg-app-bg2 px-2.5 py-1 text-[11px] text-app-text3">{groupSelected} 已选</span>
-            </div>
-            <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
-              {(group.facets || []).map(renderFacet)}
-            </div>
-          </section>
-        );
-      })}
+            );
+          })}
+        </div>
+      )}
 
+      {/* Parameter groups (output) — compact accordion-like card */}
       {parameterGroups.length > 0 && (
-        <section className="rounded-[1.6rem] border border-app-border bg-app-bg2 p-5">
-          <div className="mb-4">
-            <h3 className="text-base font-semibold text-app-text">输出参数</h3>
-            <p className="mt-1 text-xs leading-5 text-app-text3">这些参数影响比例和清晰度，不参与画面语义描述。</p>
+        <div className="panel-soft rounded-md p-2.5 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-baseline gap-1.5">
+              <h3 className="text-xs font-semibold text-app-text2">输出参数</h3>
+              <span className="text-[9px] text-app-text3">不参与语义描述</span>
+            </div>
           </div>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid grid-cols-2 gap-2">
             {parameterGroups.flatMap((group) => group.facets || []).map(renderFacet)}
           </div>
-        </section>
+        </div>
       )}
 
       {filteredGroups.length === 0 && (
-        <div className="rounded-[1.5rem] border border-dashed border-app-border bg-app-bg px-4 py-8 text-center text-sm text-app-text3">
-          没有匹配到关键词，换个词试试。
+        <div className="rounded-md border border-dashed border-app-border/40 px-4 py-8 text-center text-xs text-app-text3">
+          {groups.length === 0 ? "正在加载关键词..." : "没有匹配到关键词，换个词试试。"}
         </div>
       )}
     </div>
