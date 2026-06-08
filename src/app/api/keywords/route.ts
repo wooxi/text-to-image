@@ -105,26 +105,67 @@ export async function GET() {
 
   const groups = db.select().from(keywordGroups).all();
   const presetMeta = new Map(defaultKeywordGroups.map((group) => [group.slug, group]));
-  const result = groups.map((g) => ({
-    ...g,
-    description: presetMeta.get(g.slug)?.description,
-    parameterGroup: Boolean(presetMeta.get(g.slug)?.parameterGroup),
-    keywords: db.select().from(keywords).where(eq(keywords.groupId, g.id)).all().map((kw) => ({
-      ...kw,
-      facetSlug: keywordNameMeta.get(kw.name)?.facetSlug,
-    })),
-    facets: (presetMeta.get(g.slug)?.facets || []).map((facet) => ({
-      slug: facet.slug,
-      name: facet.name,
-      description: facet.description,
-      selectionMode: facet.selectionMode,
-      maxSelect: facet.maxSelect,
-      keywords: db.select().from(keywords).where(eq(keywords.groupId, g.id)).all().filter((kw) => keywordNameMeta.get(kw.name)?.facetSlug === facet.slug).map((kw) => ({
+  const result = groups.map((g) => {
+    const preset = presetMeta.get(g.slug);
+    const allKeywords = db.select().from(keywords).where(eq(keywords.groupId, g.id)).all();
+
+    let facets: Array<{
+      slug: string;
+      name: string;
+      description?: string;
+      selectionMode: string;
+      maxSelect?: number;
+      keywords: Array<{ id: number; groupId: number; name: string; createdAt: string; facetSlug?: string }>;
+    }> = [];
+
+    if (preset) {
+      const matchedKwIds = new Set<number>();
+      facets = preset.facets.map((facet) => {
+        const kws = allKeywords.filter((kw) => keywordNameMeta.get(kw.name)?.facetSlug === facet.slug);
+        kws.forEach((kw) => matchedKwIds.add(kw.id));
+        return {
+          slug: facet.slug,
+          name: facet.name,
+          description: facet.description,
+          selectionMode: facet.selectionMode,
+          maxSelect: facet.maxSelect,
+          keywords: kws.map((kw) => ({ ...kw, facetSlug: facet.slug })),
+        };
+      });
+
+      // Collect custom keywords that don't match any preset facet
+      const unmatched = allKeywords.filter((kw) => !matchedKwIds.has(kw.id));
+      if (unmatched.length > 0) {
+        facets.push({
+          slug: `${g.slug}-custom`,
+          name: "自定义",
+          description: "手动添加的关键词",
+          selectionMode: "multi",
+          keywords: unmatched.map((kw) => ({ ...kw, facetSlug: `${g.slug}-custom` })),
+        });
+      }
+    } else {
+      // Custom group not in presets — render all keywords as a single facet
+      facets = [{
+        slug: `${g.slug}-all`,
+        name: g.name,
+        description: undefined,
+        selectionMode: "multi",
+        keywords: allKeywords.map((kw) => ({ ...kw, facetSlug: `${g.slug}-all` })),
+      }];
+    }
+
+    return {
+      ...g,
+      description: preset?.description,
+      parameterGroup: Boolean(preset?.parameterGroup),
+      keywords: allKeywords.map((kw) => ({
         ...kw,
-        facetSlug: facet.slug,
+        facetSlug: keywordNameMeta.get(kw.name)?.facetSlug,
       })),
-    })),
-  })).sort((a, b) => {
+      facets,
+    };
+  }).sort((a, b) => {
     const ai = defaultKeywordGroups.findIndex((group) => group.slug === a.slug);
     const bi = defaultKeywordGroups.findIndex((group) => group.slug === b.slug);
     if (ai === -1 && bi === -1) return a.id - b.id;
