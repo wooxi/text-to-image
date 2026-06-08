@@ -45,16 +45,6 @@ const MODE_META = {
   },
 } as const;
 
-const KEYWORD_FLOW = [
-  { slug: "subject", name: "主体", hint: "先定人物属性和体型气质" },
-  { slug: "environment", name: "环境", hint: "再定室内外、天气和时间" },
-  { slug: "outfit", name: "穿着", hint: "补服装、配饰、材质" },
-  { slug: "pose", name: "姿势", hint: "描述动作、视线和身体表现" },
-  { slug: "camera", name: "镜头", hint: "选特写、全身、长焦、构图" },
-  { slug: "style", name: "风格", hint: "收口到写实、动漫、电影感" },
-  { slug: "output", name: "输出", hint: "单独控制比例和清晰度" },
-] as const;
-
 function getImageSize(keywords: string[]): string {
   const ratio = SIZE_MAP.find(([p]) => keywords.some((k) => k.includes(p)));
   const tiers = ratio ? SIZE_TIERS[ratio[0]] : SIZE_TIERS["1:1"];
@@ -85,13 +75,6 @@ function getOutputKeywords(groups: KeywordGroup[], selected: string[]) {
 function getSemanticKeywords(groups: KeywordGroup[], selected: string[]) {
   const outputSet = new Set(getOutputKeywords(groups, selected));
   return selected.filter((keyword) => !outputSet.has(keyword));
-}
-
-function getGroupSelectionCount(group: KeywordGroup, selected: string[]) {
-  return (group.facets || []).reduce(
-    (sum, facet) => sum + facet.keywords.filter((kw) => selected.includes(kw.name)).length,
-    0,
-  );
 }
 
 interface TaskRecord {
@@ -412,14 +395,6 @@ export default function HomePage() {
   const outputSize = selected.length > 0 && (mode === "keywords" || mode === "img2img") ? getImageSize(selected) : null;
   const videoDuration = (videoFrames / videoFps).toFixed(1);
   const queueTasks = [...activeTasks, ...failedTasks];
-  const workflowGroups = KEYWORD_FLOW.map((item) => {
-    const group = groups.find((g) => g.slug === item.slug);
-    return {
-      ...item,
-      facets: group?.facets || [],
-      selectedCount: group ? getGroupSelectionCount(group, selected) : 0,
-    };
-  }).filter((item) => item.slug !== "output" || item.facets.length > 0);
 
   return (
     <>
@@ -513,29 +488,6 @@ export default function HomePage() {
             {/* Scrollable area */}
             <div className="flex-1 overflow-y-auto">
               <div className="p-4 space-y-5">
-
-                {/* Workflow steps */}
-                {workflowGroups.length > 0 && (
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 shrink-0">
-                    {workflowGroups.map((item, index) => (
-                      <div key={item.slug} className="flex items-center gap-1.5 shrink-0">
-                        <div
-                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-base"
-                          style={{
-                            background: item.selectedCount > 0 ? "var(--accent)" : "var(--bg-tertiary)",
-                            color: item.selectedCount > 0 ? "#fff" : "var(--text-muted)",
-                          }}
-                        >
-                          {index + 1}
-                        </div>
-                        <span className="text-xs text-app-text3 leading-none">{item.name}</span>
-                        {index < workflowGroups.length - 1 && (
-                          <div className="mx-1 h-px w-6 bg-app-border/40" />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
 
                 {/* Mode-dependent params */}
                 {(mode === "keywords" || mode === "img2img") && (
