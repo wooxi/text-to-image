@@ -430,34 +430,34 @@ export default function HomePage() {
         {/* Auth banner */}
         {!loggedIn && (
           <div className="shrink-0 border-b border-app-border/40 bg-[var(--accent-light)]/30">
-            <div className="flex items-center justify-between gap-3 px-4 py-1.5">
-              <span className="text-[11px] text-app-text2">未登录 — 无法提交生成任务</span>
-              <Link href="/admin/login" className="rounded-sm bg-[var(--accent)] px-3 py-0.5 text-[10px] font-medium text-white transition-base hover:bg-[var(--accent-hover)]">
+            <div className="flex items-center justify-between gap-3 px-5 py-2">
+              <span className="text-xs text-app-text2">未登录 — 无法提交生成任务</span>
+              <Link href="/admin/login" className="rounded-md bg-[var(--accent)] px-4 py-1.5 text-xs font-medium text-white transition-base hover:bg-[var(--accent-hover)]">
                 去登录
               </Link>
             </div>
           </div>
         )}
 
-        {/* Stats bar — ultra-compact */}
-        <div className="shrink-0 flex items-center gap-4 border-b border-app-border/40 bg-[var(--bg-secondary)] px-4 py-1">
-          <span className="text-[10px] uppercase tracking-[0.18em] text-app-text3 shrink-0">{MODE_META[mode].eyebrow}</span>
-          <span className="text-[11px] text-app-text2 truncate">{currentMode?.label ?? "关键词导演"}</span>
-          <div className="ml-auto flex items-center gap-1.5">
-            <span className="text-[10px] text-app-text3 tabular-nums">
+        {/* Stats bar */}
+        <div className="shrink-0 flex items-center gap-5 border-b border-app-border/40 bg-[var(--bg-secondary)] px-5 py-1.5">
+          <span className="text-[11px] uppercase tracking-[0.18em] text-app-text3 shrink-0">{MODE_META[mode].eyebrow}</span>
+          <span className="text-xs text-app-text2 truncate font-medium">{currentMode?.label ?? "关键词导演"}</span>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-[11px] text-app-text3 tabular-nums">
               词 <span className="text-app-text2 font-mono">{groups.length === 0 ? "…" : semanticSelected.length}</span>
             </span>
             <span className="text-app-border/40">|</span>
-            <span className="text-[10px] text-app-text3 tabular-nums">
+            <span className="text-[11px] text-app-text3 tabular-nums">
               输出 <span className="text-app-text2 font-mono">{mode === "video" ? `${videoWidth}×${videoHeight}` : outputSize || "1024"}</span>
             </span>
             <span className="text-app-border/40">|</span>
-            <span className="text-[10px] text-app-text3 tabular-nums">
+            <span className="text-[11px] text-app-text3 tabular-nums">
               队列 <span className="text-app-text2 font-mono">{activeTasks.length}</span>
               {failedTasks.length > 0 && <span className="text-[var(--danger)] font-mono">/{failedTasks.length}</span>}
             </span>
             <span className="text-app-border/40">|</span>
-            <span className="text-[10px] text-app-text3 tabular-nums">
+            <span className="text-[11px] text-app-text3 tabular-nums">
               成品 <span className="text-app-text2 font-mono">{records.length}</span>
             </span>
           </div>
@@ -467,9 +467,9 @@ export default function HomePage() {
         <div className="flex-1 flex min-h-0 overflow-hidden">
 
           {/* ── LEFT SIDEBAR (17%) ── */}
-          <aside className="w-[17%] min-w-[190px] max-w-[260px] border-r border-app-border/40 overflow-y-auto">
-            <div className="p-2.5 space-y-2">
-              <div className="space-y-0.5">
+          <aside className="w-[17%] min-w-[200px] max-w-[270px] border-r border-app-border/40 overflow-y-auto">
+            <div className="p-4 space-y-4">
+              <div className="space-y-1">
                 {tabs.map((tab) => {
                   const active = tab.key === mode;
                   return (
@@ -477,16 +477,16 @@ export default function HomePage() {
                       key={tab.key}
                       type="button"
                       onClick={() => setMode(tab.key)}
-                      className="w-full rounded-sm px-2.5 py-2 text-left transition-base"
+                      className="w-full rounded-md px-3 py-3 text-left transition-base"
                       style={{
                         background: active ? "var(--accent-light)" : "transparent",
                         borderLeft: active ? "2px solid var(--accent)" : "2px solid transparent",
                       }}
                     >
-                      <div className="text-[11px] font-medium" style={{ color: active ? "var(--accent)" : "var(--text-secondary)" }}>
+                      <div className="text-sm font-medium" style={{ color: active ? "var(--accent)" : "var(--text-secondary)" }}>
                         {tab.label}
                       </div>
-                      <div className="mt-0.5 text-[9px] text-app-text3 leading-tight">{tab.desc}</div>
+                      <div className="mt-1 text-[11px] text-app-text3 leading-relaxed">{tab.desc}</div>
                     </button>
                   );
                 })}
@@ -495,12 +495,12 @@ export default function HomePage() {
               <hr className="divider" />
 
               <div>
-                <div className="text-[10px] uppercase tracking-[0.16em] text-app-text3 mb-1.5">输出</div>
-                <div className="panel-soft rounded-sm p-2.5">
-                  <div className="text-xs font-mono font-medium text-app-text">
+                <div className="text-[11px] uppercase tracking-[0.16em] text-app-text3 mb-2">输出规格</div>
+                <div className="panel-soft rounded-lg p-3.5">
+                  <div className="text-sm font-mono font-medium text-app-text">
                     {mode === "video" ? `${videoWidth}×${videoHeight}` : outputSize || "1024×1024"}
                   </div>
-                  <div className="mt-0.5 text-[9px] text-app-text3">
+                  <div className="mt-1 text-[11px] text-app-text3">
                     {mode === "video" ? `${videoFrames}f / ${videoFps}fps / ${videoDuration}s` : outputSelected.length > 0 ? `${outputSelected.length} 参数` : "默认"}
                   </div>
                 </div>
@@ -512,15 +512,15 @@ export default function HomePage() {
           <main className="flex-1 min-w-0 flex flex-col">
             {/* Scrollable area */}
             <div className="flex-1 overflow-y-auto">
-              <div className="p-3 space-y-3">
+              <div className="p-4 space-y-5">
 
                 {/* Workflow steps */}
                 {workflowGroups.length > 0 && (
-                  <div className="flex items-center gap-1 overflow-x-auto pb-1 shrink-0">
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 shrink-0">
                     {workflowGroups.map((item, index) => (
-                      <div key={item.slug} className="flex items-center gap-1 shrink-0">
+                      <div key={item.slug} className="flex items-center gap-1.5 shrink-0">
                         <div
-                          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold transition-base"
+                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-base"
                           style={{
                             background: item.selectedCount > 0 ? "var(--accent)" : "var(--bg-tertiary)",
                             color: item.selectedCount > 0 ? "#fff" : "var(--text-muted)",
@@ -528,9 +528,9 @@ export default function HomePage() {
                         >
                           {index + 1}
                         </div>
-                        <span className="text-[10px] text-app-text3 leading-none">{item.name}</span>
+                        <span className="text-xs text-app-text3 leading-none">{item.name}</span>
                         {index < workflowGroups.length - 1 && (
-                          <div className="mx-0.5 h-px w-5 bg-app-border/40" />
+                          <div className="mx-1 h-px w-6 bg-app-border/40" />
                         )}
                       </div>
                     ))}
@@ -541,10 +541,10 @@ export default function HomePage() {
                 {(mode === "keywords" || mode === "img2img") && (
                   <div className="animate-fade-in">
                     {mode === "img2img" && (
-                      <div className="panel-soft rounded-sm p-3 mb-2">
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <span className="text-[11px] font-medium text-app-text2">参考图输入</span>
-                          <span className="text-[9px] text-app-text3">{refImages.length} 张</span>
+                      <div className="panel-soft rounded-lg p-4 mb-3">
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <span className="text-sm font-medium text-app-text2">参考图输入</span>
+                          <span className="text-xs text-app-text3">{refImages.length} 张</span>
                         </div>
                         <ImageUploader images={refImages} onChange={setRefImages} />
                       </div>
@@ -553,13 +553,13 @@ export default function HomePage() {
                     <KeywordSelector groups={groups} selected={selected} onToggle={toggleKeyword} onClear={clearSelectedKeywords} />
 
                     {selected.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
+                      <div className="mt-3 flex flex-wrap gap-2">
                         {selected.map((keyword) => (
                           <button
                             key={keyword}
                             type="button"
                             onClick={() => toggleKeyword(keyword)}
-                            className="rounded-sm border px-1.5 py-0.5 text-[10px] font-medium transition-base"
+                            className="rounded-md border px-3 py-1.5 text-xs font-medium transition-base"
                             style={{ borderColor: "var(--accent)", background: "var(--accent-light)", color: "var(--accent)" }}
                           >
                             {keyword} ×
@@ -571,12 +571,12 @@ export default function HomePage() {
                 )}
 
                 {mode === "video" && (
-                  <div className="space-y-2 animate-fade-in">
-                    <div className="flex items-center gap-1 mb-1">
+                  <div className="space-y-4 animate-fade-in">
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => setVideoMode("reference")}
-                        className="rounded-sm px-2.5 py-1 text-[10px] font-medium transition-base"
+                        className="rounded-md px-3 py-1.5 text-xs font-medium transition-base"
                         style={{
                           background: videoMode === "reference" ? "var(--accent-light)" : "var(--bg-tertiary)",
                           color: videoMode === "reference" ? "var(--accent)" : "var(--text-secondary)",
@@ -585,41 +585,41 @@ export default function HomePage() {
                       <button
                         type="button"
                         onClick={() => setVideoMode("keyframes")}
-                        className="rounded-sm px-2.5 py-1 text-[10px] font-medium transition-base"
+                        className="rounded-md px-3 py-1.5 text-xs font-medium transition-base"
                         style={{
                           background: videoMode === "keyframes" ? "var(--accent-light)" : "var(--bg-tertiary)",
                           color: videoMode === "keyframes" ? "var(--accent)" : "var(--text-secondary)",
                         }}
                       >关键帧</button>
-                      <span className="ml-auto text-[10px] text-app-text3">{videoWidth}×{videoHeight} {videoFrames}f/{videoFps}fps</span>
+                      <span className="ml-auto text-xs text-app-text3">{videoWidth}×{videoHeight} | {videoFrames}f/{videoFps}fps | {videoDuration}s</span>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-1.5">
+                    <div className="grid grid-cols-4 gap-2">
                       <label className="block">
-                        <span className="text-[9px] text-app-text3">宽</span>
+                        <span className="text-[11px] text-app-text3">宽</span>
                         <select value={videoWidth} onChange={(e) => setVideoWidth(Number(e.target.value))}
-                          className="mt-0.5 w-full rounded-sm border border-app-border/60 bg-[var(--bg-tertiary)] px-1.5 py-1 text-[10px] text-app-text focus:outline-none">
+                          className="mt-1 w-full rounded-md border border-app-border/60 bg-[var(--bg-tertiary)] px-2 py-2 text-xs text-app-text focus:outline-none">
                           <option value={768}>768</option><option value={1080}>1080</option><option value={1152}>1152</option><option value={1920}>1920</option>
                         </select>
                       </label>
                       <label className="block">
-                        <span className="text-[9px] text-app-text3">高</span>
+                        <span className="text-[11px] text-app-text3">高</span>
                         <select value={videoHeight} onChange={(e) => setVideoHeight(Number(e.target.value))}
-                          className="mt-0.5 w-full rounded-sm border border-app-border/60 bg-[var(--bg-tertiary)] px-1.5 py-1 text-[10px] text-app-text focus:outline-none">
+                          className="mt-1 w-full rounded-md border border-app-border/60 bg-[var(--bg-tertiary)] px-2 py-2 text-xs text-app-text focus:outline-none">
                           <option value={576}>576</option><option value={768}>768</option><option value={1080}>1080</option><option value={1152}>1152</option>
                         </select>
                       </label>
                       <label className="block">
-                        <span className="text-[9px] text-app-text3">帧数</span>
+                        <span className="text-[11px] text-app-text3">帧数</span>
                         <select value={videoFrames} onChange={(e) => setVideoFrames(Number(e.target.value))}
-                          className="mt-0.5 w-full rounded-sm border border-app-border/60 bg-[var(--bg-tertiary)] px-1.5 py-1 text-[10px] text-app-text focus:outline-none">
+                          className="mt-1 w-full rounded-md border border-app-border/60 bg-[var(--bg-tertiary)] px-2 py-2 text-xs text-app-text focus:outline-none">
                           <option value={81}>81</option><option value={121}>121</option><option value={201}>201</option><option value={401}>401</option>
                         </select>
                       </label>
                       <label className="block">
-                        <span className="text-[9px] text-app-text3">fps</span>
+                        <span className="text-[11px] text-app-text3">fps</span>
                         <select value={videoFps} onChange={(e) => setVideoFps(Number(e.target.value))}
-                          className="mt-0.5 w-full rounded-sm border border-app-border/60 bg-[var(--bg-tertiary)] px-1.5 py-1 text-[10px] text-app-text focus:outline-none">
+                          className="mt-1 w-full rounded-md border border-app-border/60 bg-[var(--bg-tertiary)] px-2 py-2 text-xs text-app-text focus:outline-none">
                           <option value={8}>8</option><option value={16}>16</option><option value={24}>24</option><option value={30}>30</option>
                         </select>
                       </label>
@@ -630,7 +630,7 @@ export default function HomePage() {
                 )}
 
                 {/* Gallery */}
-                <div className="pt-2 border-t border-app-border/30">
+                <div className="pt-3 border-t border-app-border/30">
                   <MasonryGallery records={records} liveTasks={[]} onDelete={handleDeleteHistory} onDeleteTask={handleDeleteTask} />
                 </div>
               </div>
@@ -638,12 +638,12 @@ export default function HomePage() {
 
             {/* ── STICKY CONSOLE (bottom) ── */}
             <div className="shrink-0 border-t border-app-border/40 bg-[var(--bg-secondary)]/95 backdrop-blur-xl">
-              <div className="p-3 space-y-2">
+              <div className="p-4 space-y-3">
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   rows={3}
-                  className="w-full resize-none rounded-sm border border-app-border/60 bg-[var(--bg-tertiary)] px-3 py-2 text-xs leading-5 text-app-text placeholder:text-app-text3 focus:border-[var(--accent)] focus:outline-none"
+                  className="w-full resize-none rounded-md border border-app-border/60 bg-[var(--bg-tertiary)] px-4 py-3 text-sm leading-relaxed text-app-text placeholder:text-app-text3 focus:border-[var(--accent)] focus:outline-none"
                   placeholder={
                     mode === "video" ? "描述画面主体动作、镜头运动、光线变化..." :
                     mode === "img2img" ? "描述保留什么、改动什么..." :
@@ -652,19 +652,19 @@ export default function HomePage() {
                   }
                 />
 
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-[9px] text-app-text3">
-                    <span className="font-mono tabular-nums">{prompt.length}c</span>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 text-xs text-app-text3">
+                    <span className="font-mono tabular-nums">{prompt.length} 字符</span>
                     <span className="font-mono">{mode === "video" ? `${videoDuration}s` : outputSize || "1024"}</span>
-                    <span style={{ color: loggedIn ? "var(--success)" : "var(--text-muted)" }}>{loggedIn ? "OK" : "未登录"}</span>
+                    <span style={{ color: loggedIn ? "var(--success)" : "var(--text-muted)" }}>{loggedIn ? "已登录" : "未登录"}</span>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     {mode === "keywords" && (
                       <button
                         onClick={handleGeneratePrompt}
                         disabled={loading || selected.length === 0 || !loggedIn}
-                        className="rounded-sm border border-app-border/60 px-2.5 py-1.5 text-[10px] font-medium text-app-text3 transition-base hover:border-[var(--border-hover)] hover:text-app-text2 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="rounded-md border border-app-border/60 px-4 py-2 text-xs font-medium text-app-text3 transition-base hover:border-[var(--border-hover)] hover:text-app-text2 disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         {loading && statusText === "正在生成提示词..." ? "生成中" : "生成提示词"}
                       </button>
@@ -672,17 +672,17 @@ export default function HomePage() {
                     <button
                       onClick={handlePolish}
                       disabled={loading || !prompt.trim()}
-                      className="rounded-sm border border-app-border/60 px-2.5 py-1.5 text-[10px] font-medium text-app-text3 transition-base hover:border-[var(--border-hover)] hover:text-app-text2 disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="rounded-md border border-app-border/60 px-3 py-2 text-xs font-medium text-app-text3 transition-base hover:border-[var(--border-hover)] hover:text-app-text2 disabled:opacity-30 disabled:cursor-not-allowed"
                     >
-                      {loading && statusText === "AI 润色中..." ? "润色中" : "AI润色"}
+                      {loading && statusText === "AI 润色中..." ? "润色中" : "AI 润色"}
                     </button>
                     <button
                       onClick={handleGenerate}
                       disabled={loading || !loggedIn || (!prompt.trim() && mode !== "img2img")}
-                      className="rounded-sm bg-[var(--accent)] px-4 py-1.5 text-[10px] font-semibold text-white transition-base hover:bg-[var(--accent-hover)] hover:shadow-[0_0_10px_var(--accent-glow)] disabled:bg-[var(--bg-tertiary)] disabled:text-app-text3 disabled:shadow-none disabled:cursor-not-allowed"
+                      className="rounded-md bg-[var(--accent)] px-5 py-2 text-xs font-semibold text-white transition-base hover:bg-[var(--accent-hover)] hover:shadow-[0_0_12px_var(--accent-glow)] disabled:bg-[var(--bg-tertiary)] disabled:text-app-text3 disabled:shadow-none disabled:cursor-not-allowed"
                     >
                       {!loggedIn
-                        ? "请登录"
+                        ? "请先登录"
                         : loading && statusText !== "AI 润色中..." && statusText !== "正在生成提示词..."
                           ? statusText
                           : mode === "video"
@@ -696,62 +696,62 @@ export default function HomePage() {
           </main>
 
           {/* ── RIGHT SIDEBAR (17%) ── */}
-          <aside className="w-[17%] min-w-[190px] max-w-[260px] border-l border-app-border/40 overflow-y-auto">
-            <div className="p-2.5 space-y-2">
-              <div className="text-[10px] uppercase tracking-[0.16em] text-app-text3">任务队列</div>
+          <aside className="w-[17%] min-w-[200px] max-w-[270px] border-l border-app-border/40 overflow-y-auto">
+            <div className="p-4 space-y-3">
+              <div className="text-[11px] uppercase tracking-[0.16em] text-app-text3">任务队列</div>
 
-              <div className="grid grid-cols-3 gap-1">
-                <div className="panel-soft rounded-sm px-1.5 py-2 text-center">
-                  <div className="text-xs font-mono font-semibold text-app-text">{activeTasks.length}</div>
-                  <div className="text-[8px] text-app-text3 mt-0.5">进行中</div>
+              <div className="grid grid-cols-3 gap-1.5">
+                <div className="panel-soft rounded-lg px-2 py-3 text-center">
+                  <div className="text-sm font-mono font-semibold text-app-text">{activeTasks.length}</div>
+                  <div className="text-[10px] text-app-text3 mt-0.5">进行中</div>
                 </div>
-                <div className="panel-soft rounded-sm px-1.5 py-2 text-center">
-                  <div className="text-xs font-mono font-semibold text-app-text">{failedTasks.length}</div>
-                  <div className="text-[8px] text-app-text3 mt-0.5">失败</div>
+                <div className="panel-soft rounded-lg px-2 py-3 text-center">
+                  <div className="text-sm font-mono font-semibold text-app-text">{failedTasks.length}</div>
+                  <div className="text-[10px] text-app-text3 mt-0.5">失败</div>
                 </div>
-                <div className="panel-soft rounded-sm px-1.5 py-2 text-center">
-                  <div className="text-xs font-mono font-semibold text-app-text">{records.length}</div>
-                  <div className="text-[8px] text-app-text3 mt-0.5">成品</div>
+                <div className="panel-soft rounded-lg px-2 py-3 text-center">
+                  <div className="text-sm font-mono font-semibold text-app-text">{records.length}</div>
+                  <div className="text-[10px] text-app-text3 mt-0.5">成品</div>
                 </div>
               </div>
 
               {queueTasks.length === 0 ? (
-                <div className="py-8 text-center">
-                  <p className="text-[10px] text-app-text3">无排队任务</p>
+                <div className="py-10 text-center">
+                  <p className="text-xs text-app-text3">无排队任务</p>
                 </div>
               ) : (
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {queueTasks.map((task) => (
-                    <div key={task.id} className="panel-soft rounded-sm p-2 space-y-1.5 animate-fade-in">
+                    <div key={task.id} className="panel-soft rounded-lg p-3 space-y-2 animate-fade-in">
                       <div className="flex items-center justify-between gap-1">
-                        <div className="flex items-center gap-1">
-                          <span className="text-[9px] font-mono text-app-text3">#{task.id}</span>
-                          <span className="rounded-sm px-1 py-0 text-[8px] font-medium" style={{ background: task.type === "video" ? "var(--accent-light)" : "var(--success-bg)", color: task.type === "video" ? "var(--accent)" : "var(--success)" }}>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[11px] font-mono text-app-text3">#{task.id}</span>
+                          <span className="rounded px-1.5 py-0.5 text-[10px] font-medium" style={{ background: task.type === "video" ? "var(--accent-light)" : "var(--success-bg)", color: task.type === "video" ? "var(--accent)" : "var(--success)" }}>
                             {task.type === "video" ? "V" : "I"}
                           </span>
                         </div>
-                        <span className="text-[8px]" style={{ color: task.status === "failed" ? "var(--danger)" : task.status === "processing" ? "var(--accent)" : "var(--text-muted)" }}>
+                        <span className="text-[10px]" style={{ color: task.status === "failed" ? "var(--danger)" : task.status === "processing" ? "var(--accent)" : "var(--text-muted)" }}>
                           {task.status === "failed" ? "失败" : task.status === "processing" ? "处理中" : "排队"}
                         </span>
                       </div>
 
-                      <p className="text-[10px] leading-4 text-app-text2 line-clamp-2">{task.prompt || task.keywordNames || "…"}</p>
+                      <p className="text-xs leading-relaxed text-app-text2 line-clamp-2">{task.prompt || task.keywordNames || "…"}</p>
 
-                      <div className="h-1 rounded-full overflow-hidden bg-[var(--bg-tertiary)]">
+                      <div className="h-1.5 rounded-full overflow-hidden bg-[var(--bg-tertiary)]">
                         <div
                           className="h-full rounded-full transition-all duration-500"
                           style={{
-                            width: `${Math.max(3, Math.min(100, task.progress || (task.status === "failed" ? 100 : 6)))}%`,
+                            width: `${Math.max(4, Math.min(100, task.progress || (task.status === "failed" ? 100 : 8)))}%`,
                             background: task.status === "failed" ? "var(--danger)" : "var(--accent)",
                           }}
                         />
                       </div>
 
                       {task.error && (
-                        <p className="text-[9px] leading-3 text-[var(--danger)] line-clamp-2">{task.error}</p>
+                        <p className="text-[11px] leading-4 text-[var(--danger)] line-clamp-2">{task.error}</p>
                       )}
 
-                      <button onClick={() => handleDeleteTask(task.id)} className="text-[8px] text-app-text3 transition-base hover:text-[var(--danger)]">
+                      <button onClick={() => handleDeleteTask(task.id)} className="text-[10px] text-app-text3 transition-base hover:text-[var(--danger)]">
                         删除
                       </button>
                     </div>

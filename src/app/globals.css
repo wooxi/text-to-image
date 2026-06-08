@@ -81,6 +81,15 @@ button, input, textarea, select { font: inherit; }
 ::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 999px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
+/* Thin scrollbar for card interiors */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-hover) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar { width: 4px; height: 4px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 999px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+
 /* ── Focus ring ── */
 *:focus-visible {
   outline: 2px solid var(--accent);
