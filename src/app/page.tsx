@@ -7,7 +7,7 @@ import KeywordSelector from "@/components/KeywordSelector";
 import ImageUploader from "@/components/ImageUploader";
 import MasonryGallery from "@/components/MasonryGallery";
 import MobileHome from "@/components/MobileHome";
-import { KeywordGroup, ImageRecord } from "@/types";
+import { KeywordFacet, KeywordGroup, ImageRecord } from "@/types";
 
 const SIZE_MAP: [string, string][] = [
   ["9:16", "768x1344"], ["16:9", "1344x768"], ["4:3", "1024x768"],
@@ -28,6 +28,31 @@ function getImageSize(keywords: string[]): string {
   const key = keywords.find((k) => tiers[k.match(/\d+/)?.[0] || ""]);
   if (key) { const num = key.match(/\d+/)?.[0] || ""; if (tiers[num]) return tiers[num]; }
   return ratio ? ratio[1] : "1024x1024";
+}
+
+function getFacets(groups: KeywordGroup[]) {
+  return groups.flatMap((group) => group.facets || []);
+}
+
+function findFacetByKeyword(groups: KeywordGroup[], keyword: string): KeywordFacet | null {
+  for (const group of groups) {
+    for (const facet of group.facets || []) {
+      if (facet.keywords.some((kw) => kw.name === keyword)) return facet;
+    }
+  }
+  return null;
+}
+
+function getOutputKeywords(groups: KeywordGroup[], selected: string[]) {
+  const outputGroup = groups.find((group) => group.slug === "output");
+  if (!outputGroup) return [];
+  const outputSet = new Set(outputGroup.keywords.map((kw) => kw.name));
+  return selected.filter((keyword) => outputSet.has(keyword));
+}
+
+function getSemanticKeywords(groups: KeywordGroup[], selected: string[]) {
+  const outputSet = new Set(getOutputKeywords(groups, selected));
+  return selected.filter((keyword) => !outputSet.has(keyword));
 }
 
 interface TaskRecord {
@@ -94,24 +119,50 @@ export default function HomePage() {
   }, [fetchGroups]);
 
   const toggleKeyword = (keyword: string) => {
-    setSelected(prev => prev.includes(keyword) ? prev.filter(k => k !== keyword) : [...prev, keyword]);
+    const facet = findFacetByKeyword(groups, keyword);
+    if (!facet) {
+      setSelected((prev) => prev.includes(keyword) ? prev.filter((k) => k !== keyword) : [...prev, keyword]);
+      return;
+    }
+
+    setSelected((prev) => {
+      const active = prev.includes(keyword);
+      if (active) return prev.filter((item) => item !== keyword);
+
+      const facetKeywordSet = new Set(facet.keywords.map((item) => item.name));
+      const currentFacetSelected = prev.filter((item) => facetKeywordSet.has(item));
+
+      if (facet.selectionMode === "single") {
+        return [...prev.filter((item) => !facetKeywordSet.has(item)), keyword];
+      }
+
+      const maxSelect = facet.maxSelect || facet.keywords.length;
+      if (currentFacetSelected.length >= maxSelect) {
+        const trimmed = prev.filter((item) => !currentFacetSelected.includes(item));
+        return [...trimmed, ...currentFacetSelected.slice(1), keyword];
+      }
+
+      return [...prev, keyword];
+    });
   };
 
   const clearSelectedKeywords = () => setSelected([]);
 
   const handleGeneratePrompt = async () => {
-    if (selected.length === 0) { alert("请至少选择一个关键词"); return; }
+    const semanticKeywords = getSemanticKeywords(groups, selected);
+    if (semanticKeywords.length === 0) { alert("请至少选择一个主体或画面关键词"); return; }
     if (!loggedIn) { alert("请先登录"); return; }
     setLoading(true); setStatusText("正在生成提示词..."); setPrompt("");
     try {
       // Build structured keywords with group slugs
-      const structured = selected.map((name) => {
+      const structured = semanticKeywords.map((name) => {
         for (const group of groups) {
-          if (group.keywords.some((kw) => kw.name === name)) {
-            return { name, groupSlug: group.slug };
+          const facet = (group.facets || []).find((item) => item.keywords.some((kw) => kw.name === name));
+          if (facet) {
+            return { name, groupSlug: group.slug, facetSlug: facet.slug };
           }
         }
-        return { name, groupSlug: null };
+        return { name, groupSlug: null, facetSlug: null };
       });
       const res = await fetch("/api/generate-prompt", {
         method: "POST",
@@ -132,6 +183,7 @@ export default function HomePage() {
     if (!loggedIn) { alert("请先登录"); return; }
 
     const body: Record<string, unknown> = { type: mode, size: "1024x1024" };
+    const semanticKeywords = getSemanticKeywords(groups, selected);
 
     if (mode === "video") {
       body.width = videoWidth;
@@ -142,10 +194,11 @@ export default function HomePage() {
     }
 
     if (mode === "keywords" || mode === "img2img") {
-      if (mode === "keywords" && selected.length === 0) { alert("请至少选择一个关键词"); return; }
-      if (mode === "img2img" && selected.length === 0 && !prompt.trim()) { alert("请至少选择关键词或输入编辑指令"); return; }
-      body.keywords = selected.join(", ");
+      if (mode === "keywords" && semanticKeywords.length === 0) { alert("请至少选择一个主体或画面关键词"); return; }
+      if (mode === "img2img" && semanticKeywords.length === 0 && !prompt.trim()) { alert("请至少选择关键词或输入编辑指令"); return; }
+      body.keywords = semanticKeywords.join(", ");
       body.size = getImageSize(selected);
+      if (mode === "keywords" && prompt.trim()) body.prompt = prompt.trim();
       if (mode === "img2img" && prompt.trim()) body.prompt = prompt.trim();
     } else if (mode === "manual" || mode === "video") {
       if (!prompt.trim()) { alert("请输入提示词"); return; }
@@ -166,7 +219,7 @@ export default function HomePage() {
       const res = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!data.success) { alert(data.error || "创建失败"); return; }
-      setLiveTasks(prev => [...prev, { id: data.data.taskId, status: "pending", type: mode, keywordNames: mode === "keywords" ? selected.join(", ") : "手动输入", prompt: (body.prompt as string) || "", imagePath: "", videoPath: "", posterPath: "", progress: 0, error: "" }]);
+      setLiveTasks(prev => [...prev, { id: data.data.taskId, status: "pending", type: mode, keywordNames: mode === "keywords" ? semanticKeywords.join(", ") : mode === "img2img" ? semanticKeywords.join(", ") || "参考图编辑" : "手动输入", prompt: (body.prompt as string) || "", imagePath: "", videoPath: "", posterPath: "", progress: 0, error: "" }]);
       startPolling();
     } catch { alert("创建失败"); }
     finally { setLoading(false); setStatusText(""); }
@@ -202,6 +255,7 @@ export default function HomePage() {
   const activeTasks = liveTasks.filter((task) => task.status === "pending" || task.status === "processing");
   const failedTasks = liveTasks.filter((task) => task.status === "failed");
   const currentMode = tabs.find((tab) => tab.key === mode);
+  const semanticSelected = getSemanticKeywords(groups, selected);
   const outputSize = selected.length > 0 && (mode === "keywords" || mode === "img2img") ? getImageSize(selected) : null;
   const videoDuration = (videoFrames / videoFps).toFixed(1);
   const queueTasks = [...activeTasks, ...failedTasks];
@@ -260,9 +314,9 @@ export default function HomePage() {
                 <div className="px-4 sm:px-6 py-4 border-b border-app-border flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-sm font-semibold text-app-text">参数配置</h2>
-                    <p className="mt-1 text-xs text-app-text3">按主体、场景、光线逐步补词即可，不需要把每一组都选满。</p>
+                    <p className="mt-1 text-xs text-app-text3">先选主体，再补环境、穿着和拍摄方式。输出参数单独处理，不会混进语义描述。</p>
                   </div>
-                  <span className="text-xs text-app-text3 flex-shrink-0">{selected.length} 已选</span>
+                  <span className="text-xs text-app-text3 flex-shrink-0">{semanticSelected.length} 语义词 / {selected.length} 总计</span>
                 </div>
                 <div className="p-4 sm:p-6 space-y-6">
                   {mode === "img2img" && (
@@ -286,7 +340,7 @@ export default function HomePage() {
                         <div className="mb-3 flex items-center justify-between gap-3">
                           <div>
                             <h3 className="text-sm font-semibold text-app-text">已选关键词</h3>
-                            <p className="mt-1 text-xs text-app-text3">建议先选 3 到 6 个核心词，再交给模型扩写提示词。</p>
+                            <p className="mt-1 text-xs text-app-text3">建议先选 4 到 8 个核心词。比例和清晰度会单独作为输出参数处理。</p>
                           </div>
                           <button
                             type="button"

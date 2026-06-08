@@ -1,4 +1,10 @@
-<!DOCTYPE html>
+const fs = require("fs");
+const path = require("path");
+
+const outDir = path.join(process.cwd(), "out");
+fs.mkdirSync(outDir, { recursive: true });
+
+const html = `<!DOCTYPE html>
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
@@ -116,7 +122,7 @@
 
       function openSavedUrl() {
         const value = input.value.trim();
-        if (!/^https?:\/\//i.test(value)) {
+        if (!/^https?:\\/\\//i.test(value)) {
           status.textContent = "请输入完整地址，必须带 http:// 或 https://";
           return;
         }
@@ -141,4 +147,6 @@
       }
     </script>
   </body>
-</html>
+</html>`;
+
+fs.writeFileSync(path.join(outDir, "index.html"), html);

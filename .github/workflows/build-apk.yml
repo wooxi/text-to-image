@@ -28,10 +28,8 @@ jobs:
         run: mkdir -p data && npx drizzle-kit push --force
       - name: Build Next.js
         run: npm run build
-      - name: Create out dir
-        run: |
-          mkdir -p out
-          echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>AI 文生图</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><script>location.href="http://192.168.100.6:8080";</script></body></html>' > out/index.html
+      - name: Build Capacitor web shell
+        run: npm run build:capacitor-web
       - name: Sync Capacitor
         run: npx cap sync android
       - name: Build APK
@@ -41,5 +39,5 @@ jobs:
           ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: apk
+          name: apk-debug
           path: android/app/build/outputs/apk/debug/*.apk

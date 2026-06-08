@@ -12,10 +12,10 @@ function getConfig(key: string): string {
 export async function GET(request: Request) {
   try {
     await requireAuth();
-    const targetMap: Record<string, { endpoint: string; apiKey: string; label: string }> = {
+    const targetMap: Record<string, { endpoint: string; apiKey: string; label: string; provider?: string }> = {
       llm: { endpoint: "llm_endpoint", apiKey: "llm_api_key", label: "LLM" },
-      image: { endpoint: "image_endpoint", apiKey: "image_api_key", label: "生图" },
-      video: { endpoint: "video_endpoint", apiKey: "video_api_key", label: "视频" },
+      image: { endpoint: "image_endpoint", apiKey: "image_api_key", label: "生图", provider: getConfig("image_provider") || "openai_image" },
+      video: { endpoint: "video_endpoint", apiKey: "video_api_key", label: "视频", provider: getConfig("video_provider") || "agnes_video" },
     };
     const { searchParams } = new URL(request.url);
     const target = searchParams.get("target") || "llm";
@@ -33,7 +33,9 @@ export async function GET(request: Request) {
     }
 
     const baseUrl = endpoint.replace(/\/+$/, "");
-    const url = target === "video" && !baseUrl.endsWith("/v1") ? `${baseUrl}/v1/models` : `${baseUrl}/models`;
+    const url = field.provider === "agnes_video"
+      ? `${baseUrl.endsWith("/v1") ? baseUrl : `${baseUrl}/v1`}/models`
+      : `${baseUrl}/models`;
     const response = await fetch(url, {
       headers: { Authorization: `Bearer ${apiKey}` },
     });

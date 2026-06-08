@@ -2,11 +2,6 @@
   "appId": "com.texttoimage.app",
   "appName": "AI 文生图",
   "webDir": "out",
-  "server": {
-    "androidScheme": "https",
-    "cleartext": true,
-    "url": "http://192.168.100.6:8080"
-  },
   "android": {
     "allowMixedContent": true
   }

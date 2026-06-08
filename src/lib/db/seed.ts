@@ -51,8 +51,13 @@ const defaultConfigs: Record<string, string> = {
   llm_model: "gpt-4o",
   image_endpoint: "https://api.openai.com/v1",
   image_api_key: "",
-  image_model: "dall-e-3",
+  image_model: "gpt-image-1",
   image_size: "1024x1024",
+  image_provider: "openai_image",
+  video_endpoint: "https://apihub.agnes-ai.com",
+  video_api_key: "",
+  video_model: "agnes-video-v2.0",
+  video_provider: "agnes_video",
 };
 
 const insertConfig = sqlite.prepare(
@@ -72,7 +77,7 @@ const insertKeyword = sqlite.prepare(
 const insertGroups = sqlite.transaction(() => {
   for (const group of defaultKeywordGroups) {
     insertGroup.run(group.name, group.slug);
-    for (const kw of group.keywords) {
+    for (const kw of group.facets.flatMap((facet) => facet.keywords)) {
       insertKeyword.run(kw, group.slug);
     }
   }

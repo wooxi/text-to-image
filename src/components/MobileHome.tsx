@@ -159,7 +159,7 @@ export default function MobileHome(props: Props) {
             onChange={e => onPromptChange(e.target.value)}
             rows={mode === "video" ? 6 : 5}
             className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none focus:outline-none focus:border-[var(--accent)]"
-            placeholder={mode === "video" ? "描述画面、主体动作、镜头运动..." : "输入提示词或先选关键词生成..."}
+            placeholder={mode === "video" ? "描述画面、主体动作、镜头运动..." : mode === "img2img" ? "输入要保留和修改的内容..." : "先选主体和环境，再生成提示词或直接手改..."}
           />
           <p className="text-[10px] text-[var(--text-muted)] mt-1 text-right">{prompt.length} 字符</p>
         </div>

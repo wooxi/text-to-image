@@ -3,32 +3,27 @@ import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { config, keywordGroups, keywords } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { defaultKeywordGroups } from "@/lib/keyword-presets";
+import { defaultKeywordGroups, keywordNameMeta } from "@/lib/keyword-presets";
 
 function getConfig(key: string): string {
   const row = db.select().from(config).where(eq(config.key, key)).get();
   return row?.value || "";
 }
 
-const SYSTEM_PROMPT = `你是一位顶级商业摄影制片人兼 AI 图像提示词专家。你的任务是根据用户选择的分类关键词，撰写一段极其详细的中文画面描述，并附一段可直接用于生图的英文提示词。
+const SYSTEM_PROMPT = `你是一位顶级商业摄影制片人兼 AI 图像提示词专家。你的任务是根据用户选择的结构化关键词，撰写一段详细但紧凑的中文画面描述，并附一段可直接用于生图的英文提示词。
 
 ## 关键词分类含义
 用户的关键词按以下维度组织（你应根据分类理解每个词的用途，不要混淆维度）：
 
 | 分类 | 说明 | 典型词例 |
 |------|------|----------|
-| 主体属性 | 人数、性别、年龄、种族、发型、身份标签 | 单人、女性、长发、年轻、模特 |
-| 图片风格 | 整体画风流派 | 写实摄影、日漫风格、3D 渲染 |
-| 场景环境 | 拍摄地点和背景 | 卧室、咖啡店、城市街头 |
-| 镜头与景别 | 焦段和取景范围 | 85mm、半身、面部特写 |
-| 光线 | 光源类型和质地 | 侧光、逆光、柔光、窗边光 |
-| 构图与机位 | 相机角度和构图方式 | 仰拍、三分法、居中构图 |
-| 动作与姿态 | 人物在做什么 | 站立、低头、看镜头 |
-| 服装与配饰 | 具体衣着和配件 | 白衬衫、牛仔裤、眼镜 |
-| 妆发与质感 | 妆面、发型、成片质感 | 红唇、湿发、胶片颗粒 |
-| 情绪气质 | 画面情绪基调 | 冷淡、温柔、慵懒、安静 |
-| 局部细节 | 需要特别刻画的部位 | 眼神、锁骨、手指 |
-| 输出规格 | 画幅比例和分辨率 | 3:4、1024、2048 |
+| 主体 | 人数、性别、年龄、体型、人种、身份、发型 | 单人、女性、年轻、匀称、模特 |
+| 环境 | 室内外、场景、天气时间、光线 | 室外、海边沙滩、黄金时刻、逆光 |
+| 穿着与外观 | 服装、配饰、妆容、质感 | 白衬衫、耳环、红唇、冷灰调 |
+| 姿势与身体表现 | 姿势、动作、视线、部位强调 | 坐姿、回头、看镜头、锁骨 |
+| 拍摄方式 | 焦段、景别、机位、构图 | 85mm、半身、平视、三分法 |
+| 图片风格 | 风格大类和情绪基调 | 写实摄影、电影写实、温柔 |
+| 输出参数 | 比例与清晰度，仅作输出控制，不参与主体语义 | 3:4、1536 |
 
 ## 输出要求
 
@@ -40,11 +35,11 @@ const SYSTEM_PROMPT = `你是一位顶级商业摄影制片人兼 AI 图像提�
 
 **素材类型**：一句话说明这是什么类型的图片（如：竖屏写实人像、横版商品广告、方形头像等）
 
-**主体**：详细描述人物的年龄、性别、种族、外貌特征、发型、服装、配饰。要求具体、可视化，不写笼统形容词。例子写法："20 多岁的东亚女性，黑色长发自然散落，穿着奶油白无袖上衣和炭灰高腰长裤，银色耳饰，自然唇色"。
+**主体**：详细描述人物的年龄、性别、体型、面貌、发型、服装、配饰。要求具体、可视化，不写笼统形容词。
 
 **场景/背景**：具体描述画面中的环境、背景物体、空间结构、景深关系。
 
-**姿势/构图**：描述人物的身体姿态、四肢位置、与镜头的相对关系、构图方式。
+**姿势/构图**：描述人物的身体姿态、四肢位置、视线方向、与镜头的相对关系、构图方式。
 
 **镜头/景别**：说明焦段、取景范围、视角高度。
 
@@ -65,10 +60,11 @@ const SYSTEM_PROMPT = `你是一位顶级商业摄影制片人兼 AI 图像提�
 
 ## 写作规范
 - 全部用中文写主体部分，不要中英混杂
-- 每个维度至少 2 句话，不要跳过任何维度
+- 每个维度都要有实质内容，但整体要紧凑，不要为了凑字数堆砌空话
 - 用可视觉化的具体名词和形容词，不用"很有感觉""很高级"这种空话
 - 服装、发型、场景、光线的描述要精确到可以直接画出来
 - 如果用户没选某个维度的关键词，请根据其他已选关键词合理推断补充，不要留空
+- “输出参数”只用于判断横竖构图和清晰度倾向，不要把 1024、1536 这种参数机械写进主体描述
 - 约束条件段必须包含：正常人体比例、无畸形、无水印、无 Logo
 - 英文提示词要完整覆盖中文描述的所有维度，不能只挑几个重点写。场景、光线、质感这些维度中文写了英文也必须写进去。`;
 
@@ -82,13 +78,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "请选择至少一个关键词" }, { status: 400 });
     }
 
-    // Accept both {name, groupSlug} objects and plain strings (backward compat)
-    const keywordItems: Array<{ name: string; groupSlug: string | null }> = rawKeywords.map((kw) => {
-      if (typeof kw === "string") return { name: kw, groupSlug: null };
+    // Accept both {name, groupSlug, facetSlug} objects and plain strings (backward compat)
+    const keywordItems: Array<{ name: string; groupSlug: string | null; facetSlug: string | null }> = rawKeywords.map((kw) => {
+      if (typeof kw === "string") return { name: kw, groupSlug: null, facetSlug: null };
       if (typeof kw === "object" && kw !== null && "name" in kw) {
-        return { name: String((kw as Record<string, unknown>).name), groupSlug: (kw as Record<string, unknown>).groupSlug as string | null };
+        return {
+          name: String((kw as Record<string, unknown>).name),
+          groupSlug: (kw as Record<string, unknown>).groupSlug as string | null,
+          facetSlug: ((kw as Record<string, unknown>).facetSlug as string | null) || null,
+        };
       }
-      return { name: String(kw), groupSlug: null };
+      return { name: String(kw), groupSlug: null, facetSlug: null };
     });
 
     // If no groupSlugs provided, look them up from DB
@@ -111,7 +111,8 @@ export async function POST(request: Request) {
     const presetNames = new Map(defaultKeywordGroups.map((g) => [g.slug, g.name]));
 
     for (const item of keywordItems) {
-      const slug = item.groupSlug || keywordNameToGroupSlug?.get(item.name) || "unknown";
+      const slug = item.groupSlug || keywordNameToGroupSlug?.get(item.name) || keywordNameMeta.get(item.name)?.groupSlug || "unknown";
+      if (slug === "output") continue;
       if (!grouped.has(slug)) grouped.set(slug, []);
       grouped.get(slug)!.push(item.name);
     }
@@ -121,6 +122,11 @@ export async function POST(request: Request) {
     for (const [slug, kws] of grouped) {
       const label = presetNames.get(slug) || slug;
       userMessage += `【${label}】${kws.join("、")}\n`;
+    }
+
+    const outputKeywords = keywordItems.filter((item) => (item.groupSlug || keywordNameMeta.get(item.name)?.groupSlug) === "output").map((item) => item.name);
+    if (outputKeywords.length > 0) {
+      userMessage += `【输出参数】${outputKeywords.join("、")}\n`;
     }
 
     const endpoint = getConfig("llm_endpoint") || "https://api.openai.com/v1";

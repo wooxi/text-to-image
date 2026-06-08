@@ -3,7 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { config, keywordGroups, keywords } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { defaultKeywordGroups, keywordSyncVersion, legacyKeywordGroupSlugs, legacyOnlyKeywordGroupSlugs, keywordOldDefaults } from "@/lib/keyword-presets";
+import { defaultKeywordGroups, keywordNameMeta, keywordSyncVersion, legacyKeywordGroupSlugs, legacyOnlyKeywordGroupSlugs, keywordOldDefaults } from "@/lib/keyword-presets";
 
 const managedKeywordGroupSlugs = defaultKeywordGroups.map((group) => group.slug);
 const replaceableKeywordGroupSlugs = Array.from(new Set([...legacyKeywordGroupSlugs, ...legacyOnlyKeywordGroupSlugs, ...managedKeywordGroupSlugs]));
@@ -17,7 +17,7 @@ function upsertKeywordSyncVersion() {
 
 function insertKeywordGroup(group: (typeof defaultKeywordGroups)[number]) {
   const inserted = db.insert(keywordGroups).values({ name: group.name, slug: group.slug }).returning().get();
-  for (const keyword of group.keywords) {
+  for (const keyword of group.facets.flatMap((facet) => facet.keywords)) {
     db.insert(keywords).values({ groupId: inserted.id, name: keyword }).run();
   }
 }
@@ -52,7 +52,7 @@ function syncManagedGroupPresets() {
     const remainingNames = new Set(
       db.select().from(keywords).where(eq(keywords.groupId, existingGroup.id)).all().map((kw) => kw.name),
     );
-    for (const keyword of presetGroup.keywords) {
+    for (const keyword of presetGroup.facets.flatMap((facet) => facet.keywords)) {
       if (!remainingNames.has(keyword)) {
         db.insert(keywords).values({ groupId: existingGroup.id, name: keyword }).run();
       }
@@ -108,7 +108,22 @@ export async function GET() {
   const result = groups.map((g) => ({
     ...g,
     description: presetMeta.get(g.slug)?.description,
-    keywords: db.select().from(keywords).where(eq(keywords.groupId, g.id)).all(),
+    parameterGroup: Boolean(presetMeta.get(g.slug)?.parameterGroup),
+    keywords: db.select().from(keywords).where(eq(keywords.groupId, g.id)).all().map((kw) => ({
+      ...kw,
+      facetSlug: keywordNameMeta.get(kw.name)?.facetSlug,
+    })),
+    facets: (presetMeta.get(g.slug)?.facets || []).map((facet) => ({
+      slug: facet.slug,
+      name: facet.name,
+      description: facet.description,
+      selectionMode: facet.selectionMode,
+      maxSelect: facet.maxSelect,
+      keywords: db.select().from(keywords).where(eq(keywords.groupId, g.id)).all().filter((kw) => keywordNameMeta.get(kw.name)?.facetSlug === facet.slug).map((kw) => ({
+        ...kw,
+        facetSlug: facet.slug,
+      })),
+    })),
   })).sort((a, b) => {
     const ai = defaultKeywordGroups.findIndex((group) => group.slug === a.slug);
     const bi = defaultKeywordGroups.findIndex((group) => group.slug === b.slug);

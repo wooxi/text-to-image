@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:capacitor-web": "node scripts/create-capacitor-web.js",
     "start": "next start",
     "serve": "next start -H 0.0.0.0 -p 8080",
     "db:generate": "drizzle-kit generate",

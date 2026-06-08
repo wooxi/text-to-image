@@ -40,6 +40,10 @@ function parseReferenceImages(value: string): string[] {
   return [value];
 }
 
+function isValidAgnesFrameCount(numFrames: number) {
+  return numFrames > 0 && numFrames <= 441 && (numFrames - 1) % 8 === 0;
+}
+
 async function downloadFile(url: string, savePath: string): Promise<void> {
   const fullUrl = url.startsWith("http") ? url : `https://${url}`;
   const response = await fetch(fullUrl);
@@ -98,9 +102,10 @@ ${isImg2img ? "5. 对于图片编辑，明确描述要修改什么、保留什�
       db.update(tasks).set({ prompt: generatedPrompt, updatedAt: now() }).where(eq(tasks.id, taskId)).run();
     }
 
+    const imageProvider = getConfig("image_provider") || "openai_image";
     const imgEndpoint = getConfig("image_endpoint") || "https://api.openai.com/v1";
     const imgApiKey = getConfig("image_api_key");
-    const imgModel = getConfig("image_model") || "dall-e-3";
+    const imgModel = getConfig("image_model") || (imageProvider === "agnes_image" ? "agnes-image-2.1-flash" : "gpt-image-1");
     const size = task.size || "1024x1024";
 
     if (!imgApiKey) throw new Error("请先配置生图 API Key");
@@ -112,12 +117,17 @@ ${isImg2img ? "5. 对于图片编辑，明确描述要修改什么、保留什�
     const finalPrompt = img2imgPrefix + generatedPrompt + qualitySuffix;
 
     const imgUrl = imgEndpoint.replace(/\/+$/, "") + "/images/generations";
-    const reqBody: Record<string, unknown> = { model: imgModel, prompt: finalPrompt, n: 1, size, extra_body: { response_format: "url" } };
+    const reqBody: Record<string, unknown> = imageProvider === "agnes_image"
+      ? { model: imgModel, prompt: finalPrompt, size, extra_body: { response_format: "url" } }
+      : { model: imgModel, prompt: finalPrompt, size };
 
     if (isImg2img && task.referenceImage) {
       const referenceImages = parseReferenceImages(task.referenceImage);
-      reqBody.image = referenceImages;
-      (reqBody.extra_body as Record<string, unknown>).image = referenceImages;
+      if (imageProvider === "agnes_image") {
+        (reqBody.extra_body as Record<string, unknown>).image = referenceImages;
+      } else {
+        reqBody.image = referenceImages;
+      }
     }
 
     const imgRes = await fetch(imgUrl, {
@@ -174,6 +184,8 @@ async function processVideoTask(taskId: number, width: number, height: number, n
     const key = videoApiKey;
 
     if (!key) throw new Error("请先配置视频 API Key");
+    if (!isValidAgnesFrameCount(numFrames)) throw new Error("视频帧数必须满足 8n + 1 且不超过 441");
+    if (fps < 1 || fps > 60) throw new Error("视频帧率必须在 1 到 60 之间");
 
     let prompt = task.prompt || task.keywordNames;
 
@@ -330,6 +342,17 @@ export async function POST(request: Request) {
     }
 
     const taskType = type || "image";
+    if (taskType === "video") {
+      const frames = Number(num_frames || 121);
+      const fps = Number(frame_rate || 24);
+      if (!isValidAgnesFrameCount(frames)) {
+        return NextResponse.json({ success: false, error: "视频帧数必须满足 8n + 1 且不超过 441" }, { status: 400 });
+      }
+      if (fps < 1 || fps > 60) {
+        return NextResponse.json({ success: false, error: "视频帧率必须在 1 到 60 之间" }, { status: 400 });
+      }
+    }
+
     const task = db.insert(tasks).values({
       status: "pending",
       type: taskType,
