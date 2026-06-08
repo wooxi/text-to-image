@@ -8,44 +8,51 @@ export default function Header() {
 
   return (
     <header
-      className="border-b px-6 py-3 flex items-center justify-between"
-      style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+      className="sticky top-0 z-40 border-b border-app-border/80 bg-[var(--bg-elevated)]/95 backdrop-blur-xl"
+      style={{ borderColor: "var(--border)" }}
     >
-      <Link
-        href="/"
-        className="text-xl font-bold tracking-wide"
-        style={{ color: "var(--text-primary)" }}
-      >
-        AI 文生图
-      </Link>
-      <nav className="flex gap-4 items-center text-sm">
-        <Link
-          href="/"
-          className="transition"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          首页
-        </Link>
-        <Link
-          href="/admin"
-          className="transition"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          后台管理
-        </Link>
-        <button
-          onClick={toggle}
-          className="ml-2 px-2 py-1 rounded text-xs border transition"
-          style={{
-            background: "var(--bg-tertiary)",
-            borderColor: "var(--border)",
-            color: "var(--text-secondary)",
-          }}
-          title={theme === "dark" ? "切换明亮模式" : "切换暗黑模式"}
-        >
-          {theme === "dark" ? "☀️" : "🌙"}
-        </button>
-      </nav>
+      <div className="mx-auto flex max-w-[124rem] items-center justify-between gap-4 px-4 py-4 sm:px-6 xl:px-8">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="group flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border-hover)] bg-[var(--accent-light)] text-lg font-semibold text-[var(--accent)] transition group-hover:scale-[1.03]">
+              AI
+            </span>
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.24em] text-app-text3">Creative Workbench</div>
+              <div className="text-lg font-semibold tracking-[0.02em] text-app-text">镜头导演台</div>
+            </div>
+          </Link>
+        </div>
+
+        <nav className="flex items-center gap-2 sm:gap-3 text-sm">
+          <Link
+            href="/"
+            className="rounded-full border px-4 py-2 text-sm transition hover:border-[var(--border-hover)] hover:text-app-text"
+            style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+          >
+            创作台
+          </Link>
+          <Link
+            href="/admin"
+            className="rounded-full border px-4 py-2 text-sm transition hover:border-[var(--border-hover)] hover:text-app-text"
+            style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+          >
+            后台配置
+          </Link>
+          <button
+            onClick={toggle}
+            className="rounded-full border px-4 py-2 text-xs font-medium transition hover:border-[var(--border-hover)] hover:text-app-text"
+            style={{
+              background: "var(--bg-secondary)",
+              borderColor: "var(--border)",
+              color: "var(--text-secondary)",
+            }}
+            title={theme === "dark" ? "切换明亮模式" : "切换暗黑模式"}
+          >
+            {theme === "dark" ? "浅色界面" : "深色界面"}
+          </button>
+        </nav>
+      </div>
     </header>
   );
 }

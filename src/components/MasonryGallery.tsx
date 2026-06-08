@@ -45,17 +45,17 @@ export default function MasonryGallery({ records, liveTasks, onDelete, onDeleteT
 
   if (records.length === 0 && liveTasks.length === 0) {
     return (
-      <div className="text-center py-16 sm:py-20" style={{ color: "var(--text-muted)" }}>
-        <p className="text-sm sm:text-base">暂无生成的图片</p>
-        <p className="text-xs mt-1 opacity-60">选择关键词生成提示词，再点击生成图片即可开始</p>
+      <div className="rounded-[1.7rem] border border-dashed border-app-border bg-app-bg px-6 py-20 text-center" style={{ color: "var(--text-muted)" }}>
+        <p className="text-base sm:text-lg text-app-text">暂时还没有生成结果</p>
+        <p className="mt-2 text-sm opacity-70">从左侧先选主体、环境和镜头，再生成第一批样张。</p>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div className="flex gap-1 bg-[var(--bg-tertiary)] rounded-lg p-1">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-1 rounded-full border border-app-border bg-app-bg p-1">
           {([
             ["all", `全部 ${records.length}`],
             ["image", `图片 ${imageCount}`],
@@ -64,7 +64,7 @@ export default function MasonryGallery({ records, liveTasks, onDelete, onDeleteT
             <button
               key={key}
               onClick={() => setFilterType(key)}
-              className="px-3 py-1.5 rounded-md text-xs font-medium transition"
+              className="rounded-full px-3 py-1.5 text-xs font-medium transition"
               style={{
                 background: filterType === key ? "var(--accent)" : "transparent",
                 color: filterType === key ? "#fff" : "var(--text-secondary)",
@@ -76,8 +76,8 @@ export default function MasonryGallery({ records, liveTasks, onDelete, onDeleteT
         </div>
         <button
           onClick={() => setSortOrder((o) => (o === "newest" ? "oldest" : "newest"))}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition"
-          style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)" }}
+          className="flex items-center gap-1 rounded-full border border-app-border px-3 py-1.5 text-xs font-medium transition hover:border-[var(--border-hover)]"
+          style={{ background: "var(--bg-secondary)", color: "var(--text-secondary)" }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
             style={{ transform: sortOrder === "oldest" ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
@@ -87,7 +87,7 @@ export default function MasonryGallery({ records, liveTasks, onDelete, onDeleteT
         </button>
       </div>
 
-      <div className="columns-1 xs:columns-2 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-3 sm:gap-4">
+      <div className="columns-1 xs:columns-2 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 sm:gap-5">
         {liveTasks.map((task) => (
           <TaskCard key={`task-${task.id}`} task={task} onDelete={onDeleteTask} />
         ))}

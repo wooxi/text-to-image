@@ -50,12 +50,12 @@ export default function KeywordSelector({ groups, selected, onToggle, onClear }:
     const selectedCount = facetSelectedCount(facet, selected);
 
     return (
-      <section key={facet.slug} className="rounded-xl border border-app-border bg-app-bg p-4">
+      <section key={facet.slug} className="rounded-[1.4rem] border border-app-border bg-app-bg px-4 py-4 transition hover:border-[var(--border-hover)]">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
               <h4 className="text-sm font-semibold text-app-text">{facet.name}</h4>
-              <span className="rounded-md bg-app-bg2 px-2 py-0.5 text-[11px] text-app-text3">
+              <span className="rounded-full bg-app-bg2 px-2.5 py-1 text-[11px] text-app-text3">
                 {facet.selectionMode === "single" ? "单选" : `最多 ${facet.maxSelect || facet.keywords.length} 个`}
               </span>
             </div>
@@ -72,7 +72,7 @@ export default function KeywordSelector({ groups, selected, onToggle, onClear }:
                 key={kw.id}
                 type="button"
                 onClick={() => onToggle(kw.name)}
-                className="rounded-full border px-3 py-2 text-sm transition-all"
+                className="rounded-full border px-3 py-2 text-sm transition-all hover:-translate-y-px"
                 style={{
                   background: active ? "var(--accent-light)" : "var(--bg-secondary)",
                   borderColor: active ? "var(--accent)" : "var(--border)",
@@ -97,17 +97,17 @@ export default function KeywordSelector({ groups, selected, onToggle, onClear }:
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="搜索关键词，例如 逆光、85mm、电影感"
-            className="w-full rounded-lg border border-app-border bg-app-bg px-3 py-2 text-sm text-app-text placeholder:text-app-text3 focus:outline-none focus:border-app-border-hover"
+            className="w-full rounded-2xl border border-app-border bg-app-bg px-4 py-3 text-sm text-app-text placeholder:text-app-text3 focus:border-[var(--border-hover)] focus:outline-none"
           />
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs text-app-text3">
-          <span>{groups.length} 个分类</span>
+          <span className="rounded-full border border-app-border px-2.5 py-1">{groups.length} 个分类</span>
           <span className="h-3 w-px bg-app-border" />
-          <span>{selected.length} 个已选</span>
+          <span className="rounded-full border border-app-border px-2.5 py-1">{selected.length} 个已选</span>
           <button
             type="button"
             onClick={() => setShowSelectedOnly((prev) => !prev)}
-            className="rounded-md border border-app-border bg-app-bg px-2.5 py-1 text-xs text-app-text2 transition hover:text-app-text"
+            className="rounded-full border border-app-border bg-app-bg px-3 py-1.5 text-xs text-app-text2 transition hover:border-[var(--border-hover)] hover:text-app-text"
           >
             {showSelectedOnly ? "查看全部" : "仅看已选"}
           </button>
@@ -115,7 +115,7 @@ export default function KeywordSelector({ groups, selected, onToggle, onClear }:
             <button
               type="button"
               onClick={onClear}
-              className="rounded-md border border-app-border bg-app-bg px-2.5 py-1 text-xs text-app-text2 transition hover:text-app-text"
+              className="rounded-full border border-app-border bg-app-bg px-3 py-1.5 text-xs text-app-text2 transition hover:border-[var(--border-hover)] hover:text-app-text"
             >
               清空
             </button>
@@ -130,10 +130,10 @@ export default function KeywordSelector({ groups, selected, onToggle, onClear }:
           <section key={group.id} className="border-b border-app-border pb-6 last:border-b-0 last:pb-0">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-sm font-semibold text-app-text">{group.name}</h3>
+                <h3 className="text-base font-semibold text-app-text">{group.name}</h3>
                 {group.description && <p className="mt-1 text-xs leading-5 text-app-text3">{group.description}</p>}
               </div>
-              <span className="rounded-md bg-app-bg2 px-2 py-0.5 text-[11px] text-app-text3">{groupSelected} 已选</span>
+              <span className="rounded-full bg-app-bg2 px-2.5 py-1 text-[11px] text-app-text3">{groupSelected} 已选</span>
             </div>
             <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
               {(group.facets || []).map(renderFacet)}
@@ -143,9 +143,9 @@ export default function KeywordSelector({ groups, selected, onToggle, onClear }:
       })}
 
       {parameterGroups.length > 0 && (
-        <section className="rounded-xl border border-app-border bg-app-bg2 p-4">
+        <section className="rounded-[1.6rem] border border-app-border bg-app-bg2 p-5">
           <div className="mb-4">
-            <h3 className="text-sm font-semibold text-app-text">输出参数</h3>
+            <h3 className="text-base font-semibold text-app-text">输出参数</h3>
             <p className="mt-1 text-xs leading-5 text-app-text3">这些参数影响比例和清晰度，不参与画面语义描述。</p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
@@ -155,7 +155,7 @@ export default function KeywordSelector({ groups, selected, onToggle, onClear }:
       )}
 
       {filteredGroups.length === 0 && (
-        <div className="rounded-xl border border-dashed border-app-border bg-app-bg px-4 py-8 text-center text-sm text-app-text3">
+        <div className="rounded-[1.5rem] border border-dashed border-app-border bg-app-bg px-4 py-8 text-center text-sm text-app-text3">
           没有匹配到关键词，换个词试试。
         </div>
       )}
