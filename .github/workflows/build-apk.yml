@@ -73,5 +73,21 @@ jobs:
           files: android/app/build/outputs/apk/debug/ai-wenshengtu-v*.apk
           prerelease: false
           make_latest: true
+          append_body: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Clean old release assets
+        run: |
+          RELEASE_ID=$(curl -sH "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/latest" \
+            | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+          curl -sH "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets" \
+            | python3 -c "
+import json, sys, urllib.request
+for a in json.load(sys.stdin):
+    req = urllib.request.Request(a['url'], method='DELETE')
+    req.add_header('Authorization', 'Bearer \${{ secrets.GITHUB_TOKEN }}')
+    urllib.request.urlopen(req)
+    print('removed:', a['name'])
+"
