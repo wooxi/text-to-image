@@ -41,19 +41,18 @@ function parseReferenceImages(value: string): string[] {
 }
 
 async function imageToBase64(src: string): Promise<string> {
-  // Already base64 data
-  if (src.startsWith("data:image/")) {
-    const b64 = src.split(",")[1];
-    if (b64) return b64;
-  }
-  // Local URL — fetch and convert
+  // Already base64 data URI — keep prefix for proxy compatibility
+  if (src.startsWith("data:image/")) return src;
+  // URL that's not data URI — fetch and convert to data URI
   try {
     const response = await fetch(src);
     if (!response.ok) throw new Error(`fetch failed: ${response.status}`);
     const buffer = Buffer.from(await response.arrayBuffer());
-    return buffer.toString("base64");
+    const contentType = response.headers.get("content-type") || "image/png";
+    const b64 = buffer.toString("base64");
+    return `data:${contentType};base64,${b64}`;
   } catch {
-    // If it's a remote URL the API can access directly, return as-is
+    // Fallback: return URL as-is for remote public URLs
     return src;
   }
 }
