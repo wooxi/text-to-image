@@ -51,6 +51,13 @@ jobs:
         run: npm run build:capacitor-web
       - name: Sync Capacitor
         run: npx cap sync android
+      - name: Set version from git tag
+        run: |
+          TAG=${GITHUB_REF#refs/tags/v}
+          if [ "$TAG" != "$GITHUB_REF" ] && [ -n "$TAG" ]; then
+            echo "Tag push detected, setting version to $TAG"
+            sed -i "s/versionName \".*\"/versionName \"$TAG\"/" android/app/build.gradle
+          fi
       - name: Build APK
         id: build
         run: |
@@ -79,3 +86,19 @@ jobs:
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Remove old release assets
+        run: |
+          RELEASE=$(curl -sH "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/latest")
+          RELEASE_ID=$(echo "$RELEASE" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+          echo "$RELEASE" | python3 -c "
+          import json, sys, urllib.request
+          data = json.load(sys.stdin)
+          current = 'ai-wenshengtu-v\${{ steps.build.outputs.version }}.apk'
+          for a in data.get('assets',[]):
+              if a['name'] != current:
+                  req = urllib.request.Request(a['url'], method='DELETE')
+                  req.add_header('Authorization', 'Bearer \${{ secrets.GITHUB_TOKEN }}')
+                  urllib.request.urlopen(req)
+                  print('removed:', a['name'])
+          "

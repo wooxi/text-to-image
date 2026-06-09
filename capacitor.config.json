@@ -4,5 +4,8 @@
   "webDir": "out",
   "android": {
     "allowMixedContent": true
+  },
+  "server": {
+    "allowNavigation": ["*"]
   }
 }
