@@ -207,7 +207,7 @@ export default function FullscreenViewer({ records, activeIndex, onClose, onDele
       </div>
 
       {/* Top bar */}
-      <div className="absolute top-0 inset-x-0 z-10 flex items-center justify-between px-4 py-3">
+      <div className="absolute top-0 inset-x-0 z-10 flex items-center justify-between px-4 py-3" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
         <span className="text-white/80 text-sm">{index + 1} / {records.length}</span>
         <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center text-sm">✕</button>
       </div>

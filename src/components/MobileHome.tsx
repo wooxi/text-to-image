@@ -308,7 +308,7 @@ export default function MobileHome(props: Props) {
   return (
     <div className="flex flex-col h-[100dvh] bg-[var(--bg-primary)] text-[var(--text-primary)]">
       {/* Header */}
-      <div className="flex-shrink-0 px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-secondary)] flex items-center justify-between">
+      <div className="flex-shrink-0 px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-secondary)] flex items-center justify-between" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
         <h1 className="text-base font-bold">AI 文生图</h1>
         <div className="flex gap-2 text-[10px] text-[var(--text-muted)]">
           <span>{records.length} 作品</span>
