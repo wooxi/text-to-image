@@ -22,6 +22,19 @@ jobs:
           java-version: "21"
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+      - name: Generate keystore (first time) or restore from cache
+        id: keystore-cache
+        uses: actions/cache@v4
+        with:
+          path: android/app/release.keystore
+          key: release-keystore-v1
+      - name: Create keystore if not cached
+        if: steps.keystore-cache.outputs.cache-hit != 'true'
+        run: |
+          keytool -genkey -v -keystore android/app/release.keystore -alias texttoimage \
+            -keyalg RSA -keysize 2048 -validity 36500 \
+            -storepass android123 -keypass android123 \
+            -dname "CN=TextToImage, OU=Dev, O=TextToImage, L=SZ, ST=GD, C=CN"
       - name: Install Android SDK packages
         run: yes | sdkmanager "platforms;android-36" "build-tools;36.0.0" --channel=3 2>&1 || sdkmanager "platforms;android-35" "build-tools;35.0.0" 2>&1
       - name: Install deps
@@ -35,10 +48,16 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
       - name: Build APK
+        id: build
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
+          # Rename APK with version name
+          VERSION=$(grep versionName app/build.gradle | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
+          mv "$APK" "app/build/outputs/apk/debug/ai-wenshengtu-v${VERSION}.apk"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v4
         with:
           name: apk-debug
@@ -49,9 +68,9 @@ jobs:
           tag_name: latest
           name: Latest APK Build
           body: |
-            自动构建于 ${{ github.sha }}
-            提交: ${{ github.event.head_commit.message }}
-          files: android/app/build/outputs/apk/debug/*.apk
+            版本: v${{ steps.build.outputs.version }}
+            构建时间: ${{ github.event.head_commit.timestamp }}
+          files: android/app/build/outputs/apk/debug/ai-wenshengtu-v*.apk
           prerelease: false
           make_latest: true
         env:
