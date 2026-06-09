@@ -359,6 +359,25 @@ export default function HomePage() {
     } catch {}
   };
 
+  const handleRetryTask = async (id: number) => {
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setLiveTasks((prev) => prev.map((t) => t.id === id ? { ...t, status: "pending", progress: 0, error: "" } : t));
+        startPolling();
+      } else {
+        alert(data.error || "重试失败");
+      }
+    } catch {
+      alert("重试失败");
+    }
+  };
+
   const handlePolish = async () => {
     if (actionLock.current) return;
     if (!prompt.trim()) {
@@ -707,9 +726,16 @@ export default function HomePage() {
                         <p className="text-[11px] leading-4 text-[var(--danger)] line-clamp-2">{task.error}</p>
                       )}
 
-                      <button onClick={() => handleDeleteTask(task.id)} className="text-[10px] text-app-text3 transition-base hover:text-[var(--danger)]">
-                        删除
-                      </button>
+                      <div className="flex gap-2">
+                        {task.status === "failed" && (
+                          <button onClick={() => handleRetryTask(task.id)} className="text-[10px] text-[var(--accent)] transition-base hover:text-[var(--accent-hover)]">
+                            重试
+                          </button>
+                        )}
+                        <button onClick={() => handleDeleteTask(task.id)} className="text-[10px] text-app-text3 transition-base hover:text-[var(--danger)]">
+                          删除
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -741,6 +767,7 @@ export default function HomePage() {
           onPolish={handlePolish}
           onDeleteHistory={handleDeleteHistory}
           onDeleteTask={handleDeleteTask}
+          onRetryTask={handleRetryTask}
           refImages={refImages}
           onRefImagesChange={setRefImages}
           videoRefImages={videoRefImages}

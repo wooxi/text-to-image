@@ -1,0 +1,120 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - link "AI 文生图" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - navigation [ref=e5]:
+        - link "首页" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "后台管理" [ref=e7] [cursor=pointer]:
+          - /url: /admin
+        - button "☀️" [ref=e8]
+    - generic [ref=e10]:
+      - generic [ref=e11]: 模式 关键词生图
+      - generic [ref=e12]: 输出 待选择
+      - generic [ref=e13]: 队列 0 进行中 / 0 失败
+      - generic [ref=e14]: 作品 0
+    - main [ref=e15]:
+      - generic [ref=e16]:
+        - text: 请先登录后才能生成
+        - link "去登录" [ref=e17] [cursor=pointer]:
+          - /url: /admin/login
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - generic [ref=e21]:
+            - button "关键词生图 标签组合生成提示词" [ref=e22]:
+              - generic [ref=e23]: 关键词生图
+              - generic [ref=e24]: 标签组合生成提示词
+            - button "手动生图 直接输入完整提示词" [ref=e25]:
+              - generic [ref=e26]: 手动生图
+              - generic [ref=e27]: 直接输入完整提示词
+            - button "参考图生图 上传或粘贴参考图" [ref=e28]:
+              - generic [ref=e29]: 参考图生图
+              - generic [ref=e30]: 上传或粘贴参考图
+            - button "视频生成 文生视频/图生视频/关键帧" [ref=e31]:
+              - generic [ref=e32]: 视频生成
+              - generic [ref=e33]: 文生视频/图生视频/关键帧
+          - generic [ref=e34]:
+            - generic [ref=e35]:
+              - generic [ref=e36]:
+                - heading "参数配置" [level=2] [ref=e37]
+                - paragraph [ref=e38]: 按主体、场景、光线逐步补词即可，不需要把每一组都选满。
+              - generic [ref=e39]: 0 已选
+            - generic [ref=e41]:
+              - generic [ref=e42]: 关键词
+              - generic [ref=e43]:
+                - generic [ref=e44]:
+                  - textbox "搜索关键词，例如 逆光、85mm、电影感" [ref=e46]
+                  - generic [ref=e47]:
+                    - generic [ref=e48]: 0 个分类
+                    - generic [ref=e49]: 0 个已选
+                    - button "仅看已选" [ref=e50]
+                - generic [ref=e51]: 没有匹配到关键词，换个词试试。
+          - generic [ref=e52]:
+            - generic [ref=e53]:
+              - generic [ref=e54]:
+                - heading "提示词控制台" [level=2] [ref=e55]
+                - paragraph [ref=e56]: 先生成提示词，也可以直接编辑后生成。
+              - generic [ref=e57]: 0 字符
+            - textbox "输入完整提示词..." [ref=e58]
+            - generic [ref=e59]:
+              - generic [ref=e60]:
+                - generic [ref=e61]: 0 字符
+                - text: 默认 1024x1024
+              - generic [ref=e62]:
+                - button "生成提示词" [disabled] [ref=e63]
+                - button "AI 润色" [disabled] [ref=e64]
+                - button "请先登录" [disabled] [ref=e65]
+          - generic [ref=e66]:
+            - generic [ref=e67]:
+              - generic [ref=e68]:
+                - generic [ref=e69]: Gallery
+                - heading "生成结果" [level=2] [ref=e70]
+              - generic [ref=e71]: 0 个作品
+            - generic [ref=e72]:
+              - paragraph [ref=e73]: 暂无生成的图片
+              - paragraph [ref=e74]: 选择关键词生成提示词，再点击生成图片即可开始
+        - complementary [ref=e75]:
+          - generic [ref=e76]:
+            - generic [ref=e77]:
+              - heading "任务队列" [level=2] [ref=e78]
+              - paragraph [ref=e79]: Task Queue
+            - text: "0"
+          - generic [ref=e80]: 暂无任务
+  - generic [ref=e82]:
+    - generic [ref=e83]:
+      - heading "AI 文生图" [level=1] [ref=e84]
+      - generic [ref=e85]:
+        - generic [ref=e86]: 0 作品
+        - text: ·
+        - generic [ref=e87]: 0 进行中
+    - generic [ref=e89]:
+      - generic [ref=e90]:
+        - link "请先登录后才能生成去登录 →" [ref=e91] [cursor=pointer]:
+          - /url: /admin/login
+        - generic [ref=e92]:
+          - button "关键词" [ref=e93]
+          - button "手动" [ref=e94]
+          - button "参考图" [ref=e95]
+          - button "视频" [ref=e96]
+        - generic [ref=e98]:
+          - generic [ref=e99]:
+            - textbox "搜索关键词，例如 逆光、85mm、电影感" [ref=e101]
+            - generic [ref=e102]:
+              - generic [ref=e103]: 0 个分类
+              - generic [ref=e104]: 0 个已选
+              - button "仅看已选" [ref=e105]
+          - generic [ref=e106]: 没有匹配到关键词，换个词试试。
+        - generic [ref=e107]:
+          - textbox "输入提示词或先选关键词生成..." [ref=e108]
+          - paragraph [ref=e109]: 0 字符
+      - generic [ref=e110]:
+        - button "生成提示词" [disabled] [ref=e111]
+        - generic [ref=e112]:
+          - button "润色" [disabled] [ref=e113]
+          - button "请先登录" [disabled] [ref=e114]
+    - generic [ref=e115]:
+      - button "＋生图" [ref=e116]
+      - button "▦图库" [ref=e117]
+      - button "📋任务" [ref=e118]
+      - button "⚙配置" [ref=e119]

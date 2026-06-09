@@ -170,10 +170,10 @@ ${isImg2img ? "" : `
     // Retry on 429 (rate limit / no available instance) with backoff
     let imgRes: Response;
     let lastErrBody = "";
-    for (let attempt = 0; attempt < 5; attempt++) {
+    for (let attempt = 0; attempt < 2; attempt++) {
       if (attempt > 0) {
         const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
-        console.log(`[image#${taskId}] 429 重试 ${attempt}/5, 等待 ${(delay / 1000).toFixed(1)}s...`);
+        console.log(`[image#${taskId}] 429 重试 ${attempt}/2, 等待 ${(delay / 1000).toFixed(1)}s...`);
         await new Promise((r) => setTimeout(r, delay));
       }
       imgRes = await fetch(imgUrl, {
@@ -186,7 +186,7 @@ ${isImg2img ? "" : `
       console.log(`[image#${taskId}] 429: ${lastErrBody.substring(0, 200)}`);
     }
     if (imgRes!.status === 429) {
-      throw new Error(`生图服务繁忙，已重试5次仍不可用。请稍后再试。`);
+      throw new Error(`生图服务繁忙，已重试2次仍不可用。请稍后手动重试。`);
     }
     if (!imgRes!.ok) {
       const errBody = await imgRes!.text();
@@ -466,6 +466,36 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: "未登录" }, { status: 401 });
     }
     return NextResponse.json({ success: false, error: "获取任务失败" }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    await requireAuth();
+    const { id } = await request.json();
+    if (!id) return NextResponse.json({ success: false, error: "缺少id" }, { status: 400 });
+
+    const task = db.select().from(tasks).where(eq(tasks.id, Number(id))).get();
+    if (!task) return NextResponse.json({ success: false, error: "任务不存在" }, { status: 404 });
+    if (task.status !== "failed") return NextResponse.json({ success: false, error: "只能重试失败的任务" }, { status: 400 });
+
+    db.update(tasks).set({ status: "pending", progress: 0, error: "", updatedAt: new Date().toISOString() }).where(eq(tasks.id, task.id)).run();
+
+    if (task.type === "video") {
+      const ref = JSON.parse(task.referenceImage || "[]");
+      const w = ref.width || 1152; const h = ref.height || 768;
+      // Re-trigger with defaults since original params aren't stored separately
+      processVideoTask(task.id, 1152, 768, 121, 24, "reference");
+    } else {
+      processImageTask(task.id, task.type === "img2img");
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    if ((e as Error).message === "Unauthorized") {
+      return NextResponse.json({ success: false, error: "未登录" }, { status: 401 });
+    }
+    return NextResponse.json({ success: false, error: "重试失败" }, { status: 500 });
   }
 }
 

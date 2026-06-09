@@ -33,6 +33,7 @@ interface Props {
   onPolish: () => void;
   onDeleteHistory: (id: number) => void;
   onDeleteTask: (id: number) => void;
+  onRetryTask: (id: number) => void;
   refImages: string[];
   onRefImagesChange: (v: string[]) => void;
   videoRefImages: string[];
@@ -57,7 +58,7 @@ export default function MobileHome(props: Props) {
     prompt, onPromptChange, loading, statusText,
     mode, onModeChange, records, liveTasks,
     onGeneratePrompt, onGenerate, onPolish,
-    onDeleteHistory, onDeleteTask,
+    onDeleteHistory, onDeleteTask, onRetryTask,
     refImages, onRefImagesChange,
     videoRefImages, onVideoRefImagesChange,
     videoMode, onVideoModeChange,
@@ -252,7 +253,10 @@ export default function MobileHome(props: Props) {
           <div key={task.id} className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] text-red-400">#{task.id} · 失败</span>
-              <button onClick={() => onDeleteTask(task.id)} className="text-[10px] text-red-400">删除</button>
+              <div className="flex gap-2">
+                <button onClick={() => onRetryTask(task.id)} className="text-[10px] text-[var(--accent)]">重试</button>
+                <button onClick={() => onDeleteTask(task.id)} className="text-[10px] text-red-400">删除</button>
+              </div>
             </div>
             <p className="text-xs text-[var(--text-secondary)] line-clamp-2 mb-1">{task.prompt || task.keywordNames}</p>
             {task.error && <p className="text-[10px] text-red-400/70 mt-1">{task.error}</p>}
