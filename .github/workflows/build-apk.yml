@@ -22,10 +22,6 @@ jobs:
           java-version: "21"
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-        continue-on-error: true
-      - name: Setup Android SDK (retry)
-        if: failure()
-        uses: android-actions/setup-android@v3
       - name: Generate keystore (first time) or restore from cache
         id: keystore-cache
         uses: actions/cache@v4
@@ -86,19 +82,3 @@ jobs:
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Remove old release assets
-        run: |
-          RELEASE=$(curl -sH "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/latest")
-          RELEASE_ID=$(echo "$RELEASE" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
-          echo "$RELEASE" | python3 -c "
-          import json, sys, urllib.request
-          data = json.load(sys.stdin)
-          current = 'ai-wenshengtu-v\${{ steps.build.outputs.version }}.apk'
-          for a in data.get('assets',[]):
-              if a['name'] != current:
-                  req = urllib.request.Request(a['url'], method='DELETE')
-                  req.add_header('Authorization', 'Bearer \${{ secrets.GITHUB_TOKEN }}')
-                  urllib.request.urlopen(req)
-                  print('removed:', a['name'])
-          "
