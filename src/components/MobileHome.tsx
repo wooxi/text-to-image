@@ -24,8 +24,8 @@ interface Props {
   onPromptChange: (v: string) => void;
   loading: boolean;
   statusText: string;
-  mode: "keywords" | "manual" | "img2img" | "video";
-  onModeChange: (m: "keywords" | "manual" | "img2img" | "video") => void;
+  mode: "keywords" | "img2img" | "video";
+  onModeChange: (m: "keywords" | "img2img" | "video") => void;
   records: ImageRecord[];
   liveTasks: TaskRecord[];
   onGeneratePrompt: () => void;
@@ -94,8 +94,8 @@ export default function MobileHome(props: Props) {
           </a>
         )}
         {/* Mode selector */}
-        <div className="grid grid-cols-4 gap-1.5 bg-[var(--bg-tertiary)] rounded-xl p-1">
-          {(["keywords", "manual", "img2img", "video"] as const).map((m) => (
+        <div className="grid grid-cols-3 gap-1.5 bg-[var(--bg-tertiary)] rounded-xl p-1">
+          {(["keywords", "img2img", "video"] as const).map((m) => (
             <button
               key={m}
               onClick={() => onModeChange(m)}
@@ -105,7 +105,7 @@ export default function MobileHome(props: Props) {
                 color: mode === m ? "#fff" : "var(--text-secondary)",
               }}
             >
-              {{keywords: "关键词", manual: "手动", img2img: "参考图", video: "视频"}[m]}
+              {{keywords: "关键词", img2img: "参考图", video: "视频"}[m]}
             </button>
           ))}
         </div>

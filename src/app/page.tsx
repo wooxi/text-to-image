@@ -28,11 +28,6 @@ const MODE_META = {
     desc: "按主体、环境、服装、镜头和风格逐层组织画面。",
     eyebrow: "Guided Prompting",
   },
-  manual: {
-    label: "手动提示词",
-    desc: "直接写完整提示词，适合已有经验的精修流程。",
-    eyebrow: "Manual Prompt",
-  },
   img2img: {
     label: "参考图编辑",
     desc: "保留参考图结构，只改服装、姿态、风格或镜头。",
@@ -98,7 +93,7 @@ export default function HomePage() {
   const [statusText, setStatusText] = useState("");
   const [records, setRecords] = useState<ImageRecord[]>([]);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [mode, setMode] = useState<"keywords" | "manual" | "img2img" | "video">("keywords");
+  const [mode, setMode] = useState<"keywords" | "img2img" | "video">("keywords");
   const [refImages, setRefImages] = useState<string[]>([]);
   const [videoRefImages, setVideoRefImages] = useState<string[]>([]);
   const [videoMode, setVideoMode] = useState<"reference" | "keyframes">("reference");
@@ -282,7 +277,7 @@ export default function HomePage() {
       body.keywords = semanticKeywords.join(", ");
       body.size = getImageSize(selected);
       if (prompt.trim()) body.prompt = prompt.trim();
-    } else if (mode === "manual" || mode === "video") {
+    } else if (mode === "video") {
       if (!prompt.trim()) {
         alert("请输入提示词");
         return;
@@ -393,7 +388,6 @@ export default function HomePage() {
 
   const tabs = [
     { key: "keywords", label: "关键词生图", desc: "标签组合生成提示词" },
-    { key: "manual", label: "手动生图", desc: "直接输入完整提示词" },
     { key: "img2img", label: "参考图生图", desc: "上传或粘贴参考图" },
     { key: "video", label: "视频生成", desc: "文生视频/图生视频/关键帧" },
   ] as const;
@@ -610,8 +604,7 @@ export default function HomePage() {
                   placeholder={
                     mode === "video" ? "描述画面主体动作、镜头运动、光线变化..." :
                     mode === "img2img" ? "描述保留什么、改动什么..." :
-                    mode === "manual" ? "直接输入完整提示词..." :
-                    "先选关键词，点「生成提示词」获取底稿，或直接手写..."
+                    "先选关键词，点「生成提示词」获取底稿，或直接手写后点「AI 润色」..."
                   }
                 />
 
