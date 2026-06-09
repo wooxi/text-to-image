@@ -222,7 +222,8 @@ export default function HomePage() {
     setPrompt("");
     actionLock.current = true;
     try {
-      const structured = semanticKeywords.map((name) => {
+      // Include all selected keywords (semantic + output) so the LLM knows about ratio/resolution
+      const structured = selected.map((name) => {
         for (const group of groups) {
           const facet = (group.facets || []).find((item) => item.keywords.some((kw) => kw.name === name));
           if (facet) {
