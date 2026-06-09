@@ -308,10 +308,10 @@ async function processVideoTask(taskId: number, width: number, height: number, n
       throw new Error(`视频创建失败: ${errText}`);
     }
     const createData = await createRes.json();
-    const videoId = createData.video_id;
+    const videoId = createData.video_id || createData.task_id || createData.id;
     if (!videoId) {
-      console.error(`[video#${taskId}] 创建返回无 video_id:`, JSON.stringify(createData));
-      throw new Error("视频创建返回无 video_id");
+      console.error(`[video#${taskId}] 创建返回无 id:`, JSON.stringify(createData).substring(0, 400));
+      throw new Error("视频创建返回无 video_id / task_id / id");
     }
     console.log(`[video#${taskId}] 已创建, video_id=${videoId.substring(0, 20)}...`);
 
