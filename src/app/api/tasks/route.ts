@@ -122,11 +122,28 @@ ${isImg2img ? "" : `
 
     if (isImg2img && task.referenceImage) {
       const referenceImages = parseReferenceImages(task.referenceImage);
+      // Strip data URI prefix — some APIs only accept raw base64 or URL
+      const cleaned = referenceImages.map((img) => {
+        if (img.startsWith("data:image/")) {
+          const b64 = img.split(",")[1];
+          if (b64) {
+            console.log(`[image#${taskId}] 参考图 data URI, base64 长度: ${b64.length}`);
+            return b64;
+          }
+        }
+        console.log(`[image#${taskId}] 参考图格式: ${img.substring(0, 60)}...`);
+        return img;
+      });
+
       if (imageProvider === "agnes_image") {
-        (reqBody.extra_body as Record<string, unknown>).image = referenceImages;
+        if (!reqBody.extra_body) reqBody.extra_body = { response_format: "url" };
+        (reqBody.extra_body as Record<string, unknown>).image = cleaned.length === 1 ? cleaned[0] : cleaned;
       } else {
-        reqBody.image = referenceImages;
+        // gpt-image-1: send as array for multiple refs, string for single
+        reqBody.image = cleaned.length === 1 ? cleaned[0] : cleaned;
       }
+
+      console.log(`[image#${taskId}] img2img 请求体 (prompt缩写):`, JSON.stringify({ ...reqBody, prompt: (reqBody.prompt as string).substring(0, 80) + "..." }).substring(0, 400));
     }
 
     const imgRes = await fetch(imgUrl, {
