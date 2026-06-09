@@ -167,17 +167,33 @@ ${isImg2img ? "" : `
       console.log(`[image#${taskId}] img2img 请求体 (prompt):`, (reqBody.prompt as string).substring(0, 120));
     }
 
-    const imgRes = await fetch(imgUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${imgApiKey}` },
-      body: JSON.stringify(reqBody),
-    });
-    if (!imgRes.ok) {
-      const errBody = await imgRes.text();
-      console.error(`[image#${taskId}] 生图HTTP错误 ${imgRes.status}:`, errBody.substring(0, 500));
-      throw new Error(`生图错误 (${imgRes.status}): ${errBody.substring(0, 200)}`);
+    // Retry on 429 (rate limit / no available instance) with backoff
+    let imgRes: Response;
+    let lastErrBody = "";
+    for (let attempt = 0; attempt < 5; attempt++) {
+      if (attempt > 0) {
+        const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
+        console.log(`[image#${taskId}] 429 重试 ${attempt}/5, 等待 ${(delay / 1000).toFixed(1)}s...`);
+        await new Promise((r) => setTimeout(r, delay));
+      }
+      imgRes = await fetch(imgUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${imgApiKey}` },
+        body: JSON.stringify(reqBody),
+      });
+      if (imgRes.status !== 429) break;
+      lastErrBody = await imgRes.text();
+      console.log(`[image#${taskId}] 429: ${lastErrBody.substring(0, 200)}`);
     }
-    const imgData = await imgRes.json();
+    if (imgRes!.status === 429) {
+      throw new Error(`生图服务繁忙，已重试5次仍不可用。请稍后再试。`);
+    }
+    if (!imgRes!.ok) {
+      const errBody = await imgRes!.text();
+      console.error(`[image#${taskId}] 生图HTTP错误 ${imgRes!.status}:`, errBody.substring(0, 500));
+      throw new Error(`生图错误 (${imgRes!.status}): ${errBody.substring(0, 200)}`);
+    }
+    const imgData = await imgRes!.json();
     console.log(`[image#${taskId}] API响应:`, JSON.stringify(imgData).substring(0, 300));
     const imageResult = imgData.data?.[0];
     if (!imageResult) {
