@@ -230,7 +230,7 @@ export default function HomePage() {
       const res = await fetch("/api/generate-prompt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keywords: structured }),
+        body: JSON.stringify({ keywords: structured, mode }),
       });
       const data = await res.json();
       if (data.success) {
@@ -616,7 +616,7 @@ export default function HomePage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {mode === "keywords" && (
+                    {(mode === "keywords" || mode === "img2img") && (
                       <button
                         onClick={handleGeneratePrompt}
                         disabled={loading || selected.length === 0 || !loggedIn}

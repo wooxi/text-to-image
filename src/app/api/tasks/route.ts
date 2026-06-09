@@ -68,21 +68,20 @@ async function processImageTask(taskId: number, isImg2img: boolean) {
 
       if (!llmApiKey) throw new Error("请先配置 LLM API Key");
 
-      const systemPrompt = `你是一位专业的文生图提示词工程师。用户会提供一组关键词标签或图片编辑需求，请生成一条高质量的英文提示词。
+      const systemPrompt = `你是一位专业的${isImg2img ? "图片编辑" : "文生图"}提示词工程师。${isImg2img ? "用户上传了参考图并提供了编辑需求，请生成一条高质量的英文编辑提示词。" : "用户会提供一组关键词标签，请生成一条高质量的英文提示词。"}
 
 核心规则：
 1. 用英文输出
-2. 包含画面主体、环境/背景、光线、风格、构图、氛围等要素
+2. ${isImg2img ? "明确描述要修改什么、保留什么。参考图的整体结构、主体身份、姿态和构图应保持不变，只修改用户指定的属性（如服装、风格、光线、场景等）。" : "包含画面主体、环境/背景、光线、风格、构图、氛围等要素。"}
 3. 适当添加画质增强词（highly detailed, 8k, masterpiece, professional photography, sharp focus 等）
 4. 长度控制在 80-250 词之间
-${isImg2img ? "5. 对于图片编辑，明确描述要修改什么、保留什么" : ""}
-
-画质与规范性要求（必须包含在提示词末尾）：
+${isImg2img ? "" : `
+画质与规范性要求（图片生成必须包含在提示词末尾）：
 - perfect anatomy, anatomically correct, each body part clearly separated and distinct
 - no merged limbs, no hands touching or resting on legs, no extra appendages
 - correct number of fingers and toes, natural body proportions
 - no deformities, no fused body parts
-
+`}
 输出格式：只输出提示词本身，不要加任何解释、引号、前缀或后缀，不要输出思考过程。`;
 
       const promptLabel = isImg2img ? "图片编辑需求" : "关键词标签";
@@ -112,7 +111,7 @@ ${isImg2img ? "5. 对于图片编辑，明确描述要修改什么、保留什�
 
     const qualitySuffix = ", perfect anatomy, each body part clearly separated and distinct, no merged limbs, no hands touching legs, no extra appendages, correct number of fingers and toes, natural body proportions, no deformities, professional photography, highly detailed, masterpiece";
     const img2imgPrefix = isImg2img
-      ? "Use the provided reference image as the primary visual source. Preserve the main subject, identity, pose, composition, camera angle, and overall layout unless explicitly instructed otherwise. "
+      ? "Edit the reference image: "
       : "";
     const finalPrompt = img2imgPrefix + generatedPrompt + qualitySuffix;
 
