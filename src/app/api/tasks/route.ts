@@ -135,10 +135,19 @@ ${isImg2img ? "5. 对于图片编辑，明确描述要修改什么、保留什�
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${imgApiKey}` },
       body: JSON.stringify(reqBody),
     });
-    if (!imgRes.ok) throw new Error(`生图错误: ${await imgRes.text()}`);
+    if (!imgRes.ok) {
+      const errBody = await imgRes.text();
+      console.error(`[image#${taskId}] 生图HTTP错误 ${imgRes.status}:`, errBody.substring(0, 500));
+      throw new Error(`生图错误 (${imgRes.status}): ${errBody.substring(0, 200)}`);
+    }
     const imgData = await imgRes.json();
+    console.log(`[image#${taskId}] API响应:`, JSON.stringify(imgData).substring(0, 300));
     const imageResult = imgData.data?.[0];
-    if (!imageResult) throw new Error("生图返回数据为空");
+    if (!imageResult) {
+      const summary = JSON.stringify(imgData).substring(0, 300);
+      console.error(`[image#${taskId}] 返回数据为空 data=`, summary);
+      throw new Error(`生图返回数据为空。API 响应: ${summary}`);
+    }
 
     const publicDir = path.join(process.cwd(), "public", "images", "generated");
     if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });

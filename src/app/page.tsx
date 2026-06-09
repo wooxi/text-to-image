@@ -108,6 +108,7 @@ export default function HomePage() {
   const [videoFps, setVideoFps] = useState(24);
   const [liveTasks, setLiveTasks] = useState<TaskRecord[]>([]);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const actionLock = useRef(false);
 
   const fetchGroups = useCallback(async () => {
     try {
@@ -206,6 +207,7 @@ export default function HomePage() {
   const clearSelectedKeywords = () => setSelected([]);
 
   const handleGeneratePrompt = async () => {
+    if (actionLock.current) return;
     const semanticKeywords = getSemanticKeywords(groups, selected);
     if (semanticKeywords.length === 0) {
       alert("请至少选择一个主体或画面关键词");
@@ -218,6 +220,7 @@ export default function HomePage() {
     setLoading(true);
     setStatusText("正在生成提示词...");
     setPrompt("");
+    actionLock.current = true;
     try {
       const structured = semanticKeywords.map((name) => {
         for (const group of groups) {
@@ -244,10 +247,12 @@ export default function HomePage() {
     } finally {
       setLoading(false);
       setStatusText("");
+      actionLock.current = false;
     }
   };
 
   const handleGenerate = async () => {
+    if (actionLock.current) return;
     if (!loggedIn) {
       alert("请先登录");
       return;
@@ -301,6 +306,7 @@ export default function HomePage() {
 
     setLoading(true);
     setStatusText("正在创建任务...");
+    actionLock.current = true;
     try {
       const res = await fetch("/api/tasks", {
         method: "POST",
@@ -338,6 +344,7 @@ export default function HomePage() {
     } finally {
       setLoading(false);
       setStatusText("");
+      actionLock.current = false;
     }
   };
 
@@ -357,12 +364,14 @@ export default function HomePage() {
   };
 
   const handlePolish = async () => {
+    if (actionLock.current) return;
     if (!prompt.trim()) {
       alert("请先输入内容");
       return;
     }
     setStatusText("AI 润色中...");
     setLoading(true);
+    actionLock.current = true;
     try {
       const res = await fetch("/api/polish", {
         method: "POST",
@@ -377,6 +386,7 @@ export default function HomePage() {
     } finally {
       setLoading(false);
       setStatusText("");
+      actionLock.current = false;
     }
   };
 
