@@ -41,3 +41,14 @@ jobs:
         with:
           name: apk-debug
           path: android/app/build/outputs/apk/debug/*.apk
+      - name: Publish to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest APK Build
+          body: |
+            自动构建于 ${{ github.sha }}
+            提交: ${{ github.event.head_commit.message }}
+          files: android/app/build/outputs/apk/debug/*.apk
+          prerelease: false
+          make_latest: true
