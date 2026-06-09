@@ -40,6 +40,24 @@ function parseReferenceImages(value: string): string[] {
   return [value];
 }
 
+async function imageToBase64(src: string): Promise<string> {
+  // Already base64 data
+  if (src.startsWith("data:image/")) {
+    const b64 = src.split(",")[1];
+    if (b64) return b64;
+  }
+  // Local URL — fetch and convert
+  try {
+    const response = await fetch(src);
+    if (!response.ok) throw new Error(`fetch failed: ${response.status}`);
+    const buffer = Buffer.from(await response.arrayBuffer());
+    return buffer.toString("base64");
+  } catch {
+    // If it's a remote URL the API can access directly, return as-is
+    return src;
+  }
+}
+
 function isValidAgnesFrameCount(numFrames: number) {
   return numFrames > 0 && numFrames <= 441 && (numFrames - 1) % 8 === 0;
 }
@@ -122,28 +140,21 @@ ${isImg2img ? "" : `
 
     if (isImg2img && task.referenceImage) {
       const referenceImages = parseReferenceImages(task.referenceImage);
-      // Strip data URI prefix — some APIs only accept raw base64 or URL
-      const cleaned = referenceImages.map((img) => {
-        if (img.startsWith("data:image/")) {
-          const b64 = img.split(",")[1];
-          if (b64) {
-            console.log(`[image#${taskId}] 参考图 data URI, base64 长度: ${b64.length}`);
-            return b64;
-          }
-        }
-        console.log(`[image#${taskId}] 参考图格式: ${img.substring(0, 60)}...`);
-        return img;
-      });
+      // Convert local URLs to base64 so external APIs can access them
+      const cleaned = await Promise.all(referenceImages.map(async (img) => {
+        const result = await imageToBase64(img);
+        console.log(`[image#${taskId}] 参考图: ${img.substring(0, 50)}... -> base64 len=${result.length}`);
+        return result;
+      }));
 
       if (imageProvider === "agnes_image") {
         if (!reqBody.extra_body) reqBody.extra_body = { response_format: "url" };
         (reqBody.extra_body as Record<string, unknown>).image = cleaned.length === 1 ? cleaned[0] : cleaned;
       } else {
-        // gpt-image-1: send as array for multiple refs, string for single
         reqBody.image = cleaned.length === 1 ? cleaned[0] : cleaned;
       }
 
-      console.log(`[image#${taskId}] img2img 请求体 (prompt缩写):`, JSON.stringify({ ...reqBody, prompt: (reqBody.prompt as string).substring(0, 80) + "..." }).substring(0, 400));
+      console.log(`[image#${taskId}] img2img 请求体:`, JSON.stringify({ ...reqBody, prompt: (reqBody.prompt as string).substring(0, 80) + "..." }).substring(0, 300));
     }
 
     const imgRes = await fetch(imgUrl, {
