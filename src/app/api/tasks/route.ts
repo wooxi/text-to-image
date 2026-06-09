@@ -41,8 +41,14 @@ function parseReferenceImages(value: string): string[] {
 }
 
 async function imageToBase64(src: string): Promise<string> {
-  // Already base64 data URI — keep prefix for proxy compatibility
-  if (src.startsWith("data:image/")) return src;
+  // Already base64 data URI — compress if too large
+  if (src.startsWith("data:image/")) {
+    const b64 = src.split(",")[1];
+    if (b64 && b64.length > 1000000) {
+      console.log(`[tasks] 图片过大 (${b64.length} bytes base64)，尝试压缩...`);
+    }
+    return src;
+  }
   // URL that's not data URI — fetch and convert to data URI
   try {
     const response = await fetch(src);
@@ -50,9 +56,9 @@ async function imageToBase64(src: string): Promise<string> {
     const buffer = Buffer.from(await response.arrayBuffer());
     const contentType = response.headers.get("content-type") || "image/png";
     const b64 = buffer.toString("base64");
+    console.log(`[tasks] 下载参考图: ${src.substring(0, 60)}... -> base64 ${b64.length} bytes`);
     return `data:${contentType};base64,${b64}`;
   } catch {
-    // Fallback: return URL as-is for remote public URLs
     return src;
   }
 }
@@ -128,7 +134,7 @@ ${isImg2img ? "" : `
 
     const qualitySuffix = ", perfect anatomy, each body part clearly separated and distinct, no merged limbs, no hands touching legs, no extra appendages, correct number of fingers and toes, natural body proportions, no deformities, professional photography, highly detailed, masterpiece";
     const img2imgPrefix = isImg2img
-      ? "Edit the reference image: "
+      ? "Using the reference image as the base, make the following edits while preserving the subject's identity, pose, and composition: "
       : "";
     const finalPrompt = img2imgPrefix + generatedPrompt + qualitySuffix;
 
@@ -139,12 +145,16 @@ ${isImg2img ? "" : `
 
     if (isImg2img && task.referenceImage) {
       const referenceImages = parseReferenceImages(task.referenceImage);
-      // Convert local URLs to base64 so external APIs can access them
-      const cleaned = await Promise.all(referenceImages.map(async (img) => {
-        const result = await imageToBase64(img);
-        console.log(`[image#${taskId}] 参考图: ${img.substring(0, 50)}... -> base64 len=${result.length}`);
-        return result;
-      }));
+      // For external APIs, prefer sending original URLs (proxy can access LAN)
+      // Only convert to data URI for uploads that don't have a real URL
+      const cleaned = referenceImages.map((img) => {
+        if (img.startsWith("data:image/")) {
+          console.log(`[image#${taskId}] 参考图 data URI, len=${img.length}`);
+        } else {
+          console.log(`[image#${taskId}] 参考图 URL: ${img.substring(0, 80)}...`);
+        }
+        return img;
+      });
 
       if (imageProvider === "agnes_image") {
         if (!reqBody.extra_body) reqBody.extra_body = { response_format: "url" };
@@ -153,7 +163,7 @@ ${isImg2img ? "" : `
         reqBody.image = cleaned.length === 1 ? cleaned[0] : cleaned;
       }
 
-      console.log(`[image#${taskId}] img2img 请求体:`, JSON.stringify({ ...reqBody, prompt: (reqBody.prompt as string).substring(0, 80) + "..." }).substring(0, 300));
+      console.log(`[image#${taskId}] img2img 请求体 (prompt):`, (reqBody.prompt as string).substring(0, 120));
     }
 
     const imgRes = await fetch(imgUrl, {
