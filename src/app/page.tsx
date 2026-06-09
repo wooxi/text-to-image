@@ -266,8 +266,8 @@ export default function HomePage() {
     }
 
     if (mode === "keywords" || mode === "img2img") {
-      if (mode === "keywords" && semanticKeywords.length === 0) {
-        alert("请至少选择一个主体或画面关键词");
+      if (mode === "keywords" && semanticKeywords.length === 0 && !prompt.trim()) {
+        alert("请至少选择一个关键词或输入提示词");
         return;
       }
       if (mode === "img2img" && semanticKeywords.length === 0 && !prompt.trim()) {
