@@ -46,28 +46,53 @@ export default function FullscreenViewer({ records, activeIndex, onClose, onDele
   }
 
   const handleDownload = async () => {
+    const url = isVideo ? record.imagePath : src;
     try {
-      const res = await fetch(isVideo ? record.imagePath : src);
+      const res = await fetch(url);
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = url.split("/").pop() || "download";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    } catch {
+      // Fallback: open in new tab / trigger system download
       const a = document.createElement("a");
       a.href = url;
-      a.download = src.split("/").pop() || "download";
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.download = url.split("/").pop() || "download";
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      alert("下载失败");
+      document.body.removeChild(a);
     }
   };
 
   const handleCopy = async () => {
+    const text = record.prompt || record.keywordNames;
     try {
-      await navigator.clipboard.writeText(record.prompt || record.keywordNames);
+      await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      // Fallback for Android WebView / insecure context
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        alert("复制失败，请长按文本手动复制");
+      }
     }
   };
 
