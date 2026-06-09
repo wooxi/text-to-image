@@ -228,6 +228,9 @@ async function processVideoTask(taskId: number, width: number, height: number, n
     const videoModel = getConfig("video_model") || "agnes-video-v2.0";
     const baseUrl = videoEndpoint.replace(/\/+$/, "");
     const key = videoApiKey;
+    // Avoid doubling /v1 if endpoint already includes it
+    const videoApiPath = baseUrl.endsWith("/v1") ? "/videos" : "/v1/videos";
+    console.log(`[video#${taskId}] 请求URL: ${baseUrl}${videoApiPath}`);
 
     if (!key) throw new Error("请先配置视频 API Key");
     if (!isValidAgnesFrameCount(numFrames)) throw new Error("视频帧数必须满足 8n + 1 且不超过 441");
@@ -294,7 +297,7 @@ async function processVideoTask(taskId: number, width: number, height: number, n
       }
     }
 
-    const createRes = await fetch(`${baseUrl}/v1/videos`, {
+    const createRes = await fetch(`${baseUrl}${videoApiPath}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
       body: JSON.stringify(reqBody),
