@@ -138,7 +138,8 @@ ${isImg2img ? "" : `
       : "";
     const finalPrompt = img2imgPrefix + generatedPrompt + qualitySuffix;
 
-    const imgUrl = imgEndpoint.replace(/\/+$/, "") + "/images/generations";
+    const imgUrl = imgEndpoint.replace(/\/+$/, "")
+      + (isImg2img && imageProvider !== "agnes_image" ? "/images/edits" : "/images/generations");
     const reqBody: Record<string, unknown> = imageProvider === "agnes_image"
       ? { model: imgModel, prompt: finalPrompt, size, extra_body: { response_format: "url" } }
       : { model: imgModel, prompt: finalPrompt, size };
