@@ -15,7 +15,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (pathname === "/admin/login") { setAuthed(true); return; }
-    fetch("/api/auth/me")
+    fetch("/api/auth/me", { credentials: "include" })
       .then((r) => r.json())
       .then((data) => {
         if (data.success && data.data) {

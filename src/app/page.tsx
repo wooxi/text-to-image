@@ -158,7 +158,7 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchGroups();
-    fetch("/api/auth/me")
+    fetch("/api/auth/me", { credentials: "include" })
       .then((r) => r.json())
       .then((data) => {
         if (data.success && data.data) {
