@@ -95,16 +95,11 @@ async function processImageTask(taskId: number, isImg2img: boolean) {
 
 核心规则：
 1. 用英文输出
-2. ${isImg2img ? "明确描述要修改什么、保留什么。参考图的整体结构、主体身份、姿态和构图应保持不变，只修改用户指定的属性（如服装、风格、光线、场景等）。" : "包含画面主体、环境/背景、光线、风格、构图、氛围等要素。"}
+2. ${isImg2img ? "明确描述要修改什么、保留什么。参考图的整体结构、主体身份、姿态和构图应保持不变，只修改用户指定的属性（如服装、风格、光线、场景等）。" : "包含画面主体、环境/背景、光线、风格、构图、氛围等要素。避免直接描述身体裸露或暗示性内容。"}
 3. 适当添加画质增强词（highly detailed, 8k, masterpiece, professional photography, sharp focus 等）
 4. 长度控制在 80-250 词之间
-${isImg2img ? "" : `
-画质与规范性要求（图片生成必须包含在提示词末尾）：
-- perfect anatomy, anatomically correct, each body part clearly separated and distinct
-- no merged limbs, no hands touching or resting on legs, no extra appendages
-- correct number of fingers and toes, natural body proportions
-- no deformities, no fused body parts
-`}
+5. 安全准则：用衣物配饰自然覆盖身体，用光影和构图引导视线，避免写裸体/透视/贴身/暗示性词汇。关键词中如有身体部位，通过衣物遮挡、手部动作、光影过渡来描述。
+
 输出格式：只输出提示词本身，不要加任何解释、引号、前缀或后缀，不要输出思考过程。`;
 
       const promptLabel = isImg2img ? "图片编辑需求" : "关键词标签";
@@ -132,7 +127,7 @@ ${isImg2img ? "" : `
 
     if (!imgApiKey) throw new Error("请先配置生图 API Key");
 
-    const qualitySuffix = ", perfect anatomy, each body part clearly separated and distinct, no merged limbs, no hands touching legs, no extra appendages, correct number of fingers and toes, natural body proportions, no deformities, professional photography, highly detailed, masterpiece";
+    const qualitySuffix = ", natural body proportions, clearly defined limbs uncrossed, professional photography, highly detailed, masterpiece, sharp focus";
     const img2imgPrefix = isImg2img
       ? "Using the reference image as the base, make the following edits while preserving the subject's identity, pose, and composition: "
       : "";
