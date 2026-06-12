@@ -72,7 +72,22 @@ body::after {
 }
 
 a { color: inherit; text-decoration: none; }
-button, input, textarea, select { font: inherit; }
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+/* Prevent iOS double-tap zoom on interactive elements */
+button, a, [role="button"] {
+  touch-action: manipulation;
+}
+
+/* Smooth momentum scroll on iOS */
+.scroll-touch {
+  -webkit-overflow-scrolling: touch;
+}
 
 ::selection { background: var(--accent-light); color: var(--text-primary); }
 

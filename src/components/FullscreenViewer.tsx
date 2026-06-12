@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ImageRecord } from "@/types";
 
 interface Props {
@@ -11,39 +11,35 @@ interface Props {
 }
 
 export default function FullscreenViewer({ records, activeIndex, onClose, onDelete }: Props) {
-  const [index, setIndex] = useState(activeIndex);
   const [showDetail, setShowDetail] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [scale, setScale] = useState(1);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const startPos = useRef({ x: 0, y: 0 });
-  const lastPos = useRef({ x: 0, y: 0 });
-  const touchStartX = useRef(0);
-  const touchStartY = useRef(0);
-  const lastDistance = useRef(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [currentIndex, setCurrentIndex] = useState(activeIndex);
 
-  const record = records[index];
+  // Sync scroll position to initial index
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft = activeIndex * scrollRef.current.clientWidth;
+    }
+  }, [activeIndex]);
+
+  // Update index on scroll
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const idx = Math.round(el.scrollLeft / el.clientWidth);
+      if (idx >= 0 && idx < records.length) setCurrentIndex(idx);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [records.length]);
+
+  const record = records[currentIndex];
   if (!record) return null;
 
   const isVideo = record.type === "video" || /\.(mp4|webm|mov)$/i.test(record.imagePath);
   const src = isVideo ? (record.posterPath || record.imagePath) : record.imagePath;
-
-  const goNext = useCallback(() => {
-    setIndex((i) => Math.min(i + 1, records.length - 1));
-    resetZoom();
-  }, [records.length]);
-
-  const goPrev = useCallback(() => {
-    setIndex((i) => Math.max(i - 1, 0));
-    resetZoom();
-  }, []);
-
-  function resetZoom() {
-    setScale(1);
-    setPosition({ x: 0, y: 0 });
-  }
 
   const handleDownload = async () => {
     const url = isVideo ? record.imagePath : src;
@@ -59,11 +55,10 @@ export default function FullscreenViewer({ records, activeIndex, onClose, onDele
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
     } catch {
-      // Fallback: open in new tab / trigger system download
       const a = document.createElement("a");
       a.href = url;
       a.target = "_blank";
-      a.rel = "noopener";
+      a.rel = "noopener noreferrer";
       a.download = url.split("/").pop() || "download";
       document.body.appendChild(a);
       a.click();
@@ -71,14 +66,36 @@ export default function FullscreenViewer({ records, activeIndex, onClose, onDele
     }
   };
 
+  const handleShare = async () => {
+    const url = isVideo ? record.imagePath : src;
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const file = new File([blob], url.split("/").pop() || "image.png", { type: blob.type });
+      await navigator.share({
+        files: [file],
+        title: "AI 文生图",
+        text: record.prompt || record.keywordNames || "",
+      });
+    } catch {
+      // Fallback: share just the text
+      try {
+        await navigator.share({
+          title: "AI 文生图",
+          text: record.prompt || record.keywordNames || "",
+          url: src,
+        });
+      } catch {
+        // User cancelled or not supported
+      }
+    }
+  };
+
   const handleCopy = async () => {
     const text = record.prompt || record.keywordNames;
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback for Android WebView / insecure context
       try {
         const ta = document.createElement("textarea");
         ta.value = text;
@@ -88,177 +105,165 @@ export default function FullscreenViewer({ records, activeIndex, onClose, onDele
         ta.select();
         document.execCommand("copy");
         document.body.removeChild(ta);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch {
-        alert("复制失败，请长按文本手动复制");
-      }
+      } catch {}
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  // Touch handlers for swipe
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
-      lastDistance.current = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY,
-      );
-      return;
-    }
-    if (e.touches.length === 1 && scale <= 1.01) {
-      touchStartX.current = e.touches[0].clientX;
-      touchStartY.current = e.touches[0].clientY;
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY,
-      );
-      if (lastDistance.current) {
-        const newScale = Math.min(4, Math.max(0.5, scale * (dist / lastDistance.current)));
-        setScale(newScale);
-      }
-      lastDistance.current = dist;
-      return;
-    }
-    if (e.touches.length === 1 && scale <= 1.01) {
-      const dx = e.touches[0].clientX - touchStartX.current;
-      const dy = e.touches[0].clientY - touchStartY.current;
-      lastPos.current = { x: dx, y: dy };
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (scale <= 1.01 && Math.abs(lastPos.current.x) > 60) {
-      if (lastPos.current.x > 0 && index > 0) goPrev();
-      else if (lastPos.current.x < 0 && index < records.length - 1) goNext();
-    }
-    lastPos.current = { x: 0, y: 0 };
-  };
-
-  // Mouse drag for zoomed image
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (scale <= 1) return;
-    setIsDragging(true);
-    startPos.current = { x: e.clientX - position.x, y: e.clientY - position.y };
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setPosition({ x: e.clientX - startPos.current.x, y: e.clientY - startPos.current.y });
-  };
-
-  const handleMouseUp = () => setIsDragging(false);
-
-  // Double tap / double click to zoom
-  const handleDoubleClick = () => {
-    if (scale > 1) resetZoom();
-    else { setScale(2.5); setPosition({ x: 0, y: 0 }); }
-  };
-
-  // Keyboard navigation
+  // Keyboard
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
-      if (e.key === "ArrowLeft") goPrev();
-      if (e.key === "ArrowRight") goNext();
     };
     window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [onClose, goPrev, goNext]);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
-  const showDetailPanel = () => setShowDetail(true);
-  const hideDetailPanel = () => setShowDetail(false);
+  const scrollTo = (idx: number) => {
+    scrollRef.current?.scrollTo({ left: idx * (scrollRef.current?.clientWidth || 0), behavior: "smooth" });
+  };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black" onClick={() => { if (!showDetail) onClose(); }}>
-      {/* Image area */}
+    <div className="fixed inset-0 z-50 bg-black flex flex-col">
+      {/* ── Top bar ── */}
       <div
-        ref={containerRef}
-        className="absolute inset-0 flex items-center justify-center"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onDoubleClick={handleDoubleClick}
-        onClick={(e) => { if (e.target === containerRef.current && !showDetail) onClose(); }}
+        className="absolute top-0 inset-x-0 z-[60] flex items-center justify-between px-5 py-3"
+        style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}
       >
-        {isVideo ? (
-          <video src={record.imagePath} controls className="max-w-full max-h-full object-contain" />
-        ) : (
-          <img
-            src={src}
-            alt={record.prompt || record.keywordNames}
-            className="max-w-full max-h-full object-contain select-none"
-            style={{ transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`, transition: isDragging ? "none" : "transform 0.2s", cursor: scale > 1 ? (isDragging ? "grabbing" : "grab") : "default" }}
-            draggable={false}
-          />
+        <button
+          onClick={onClose}
+          className="w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center"
+        >
+          ✕
+        </button>
+
+        {/* Dot indicators */}
+        {records.length > 1 && (
+          <div className="flex gap-1.5">
+            {records.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => scrollTo(i)}
+                className="w-1.5 h-1.5 rounded-full transition-base"
+                style={{
+                  background: i === currentIndex ? "#fff" : "rgba(255,255,255,0.35)",
+                  transform: i === currentIndex ? "scale(1.4)" : "scale(1)",
+                }}
+              />
+            ))}
+          </div>
         )}
+
+        <span className="text-white/60 text-xs tabular-nums min-w-[40px] text-right">
+          {currentIndex + 1}/{records.length}
+        </span>
       </div>
 
-      {/* Top bar */}
-      <div className="absolute top-0 inset-x-0 z-10 flex items-center justify-between px-4 py-3" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
-        <span className="text-white/80 text-sm">{index + 1} / {records.length}</span>
-        <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center text-sm">✕</button>
+      {/* ── Image scroll-snap area ── */}
+      <div
+        ref={scrollRef}
+        className="flex-1 flex overflow-x-auto snap-x snap-mandatory scrollbar-none overscroll-x-contain"
+        style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}
+      >
+        {records.map((r, i) => {
+          const isV = r.type === "video" || /\.(mp4|webm|mov)$/i.test(r.imagePath);
+          const imgSrc = isV ? (r.posterPath || r.imagePath) : r.imagePath;
+
+          return (
+            <div
+              key={r.id}
+              className="flex-none w-full h-full snap-center flex items-center justify-center"
+            >
+              {isV ? (
+                <video
+                  src={r.imagePath}
+                  controls
+                  className="max-w-full max-h-full object-contain"
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={imgSrc}
+                  alt={r.prompt || r.keywordNames}
+                  className="max-w-full max-h-full object-contain"
+                  loading="lazy"
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
 
-      {/* Action bar - bottom */}
-      <div className="absolute bottom-0 inset-x-0 z-10 pb-6 px-4" onClick={(e) => e.stopPropagation()}>
-        {/* Nav arrows */}
-        <div className="flex justify-between items-center mb-4 px-2 pointer-events-none">
+      {/* ── Nav arrows ── */}
+      {records.length > 1 && (
+        <>
           <button
-            onClick={goPrev}
-            disabled={index === 0}
-            className="w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center pointer-events-auto disabled:opacity-30"
+            onClick={() => scrollTo(Math.max(0, currentIndex - 1))}
+            disabled={currentIndex === 0}
+            className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/15 text-white flex items-center justify-center disabled:opacity-20"
           >
             ‹
           </button>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowDetail(!showDetail)}
-              className="px-4 py-2 rounded-full bg-white/20 text-white text-sm pointer-events-auto backdrop-blur"
-            >
-              {showDetail ? "收起" : "详情"}
-            </button>
-            <button
-              onClick={handleDownload}
-              className="px-4 py-2 rounded-full bg-white/20 text-white text-sm pointer-events-auto backdrop-blur"
-            >
-              下载
-            </button>
-          </div>
           <button
-            onClick={goNext}
-            disabled={index === records.length - 1}
-            className="w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center pointer-events-auto disabled:opacity-30"
+            onClick={() => scrollTo(Math.min(records.length - 1, currentIndex + 1))}
+            disabled={currentIndex === records.length - 1}
+            className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/15 text-white flex items-center justify-center disabled:opacity-20"
           >
             ›
           </button>
-        </div>
+        </>
+      )}
+
+      {/* ── Bottom action bar ── */}
+      <div
+        className="absolute bottom-0 inset-x-0 z-[60] pb-4 px-4 flex items-center justify-center gap-3"
+        style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={() => setShowDetail(!showDetail)}
+          className="px-4 py-2.5 rounded-full bg-white/15 text-white text-sm backdrop-blur transition-base"
+        >
+          {showDetail ? "收起" : "详情"}
+        </button>
+        {typeof navigator !== "undefined" && "share" in navigator && (
+          <button
+            onClick={handleShare}
+            className="px-4 py-2.5 rounded-full bg-white/15 text-white text-sm backdrop-blur transition-base"
+          >
+            分享
+          </button>
+        )}
+        <button
+          onClick={handleDownload}
+          className="px-4 py-2.5 rounded-full bg-white/15 text-white text-sm backdrop-blur transition-base"
+        >
+          {isVideo ? "下载" : "下载"}
+        </button>
       </div>
 
-      {/* Detail panel - slides up from bottom */}
+      {/* ── Detail panel + backdrop ── */}
       {showDetail && (
-        <div
-          className="absolute bottom-0 inset-x-0 z-20 bg-[#1a1a1a] rounded-t-2xl max-h-[55vh] overflow-y-auto animate-slide-up"
-          style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.5)" }}
-          onClick={(e) => e.stopPropagation()}
-        >
+        <>
+          {/* Backdrop — tap to dismiss */}
+          <div
+            className="absolute inset-0 z-20"
+            onClick={() => setShowDetail(false)}
+          />
+          <div
+            className="absolute bottom-0 inset-x-0 z-30 bg-[#1a1a1a] rounded-t-2xl max-h-[50vh] overflow-y-auto animate-slide-up"
+            style={{
+              boxShadow: "0 -4px 24px rgba(0,0,0,0.5)",
+              paddingBottom: "max(16px, env(safe-area-inset-bottom))",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
           <div className="flex items-center justify-center pt-3 pb-1">
             <div className="w-10 h-1 rounded-full bg-white/30" />
           </div>
+
           <div className="px-5 pb-6">
-            {/* Keywords */}
             {record.keywordNames && (
               <div className="mb-4">
                 <p className="text-xs text-white/50 mb-2">关键词</p>
@@ -272,7 +277,6 @@ export default function FullscreenViewer({ records, activeIndex, onClose, onDele
               </div>
             )}
 
-            {/* Prompt */}
             <div className="mb-4">
               <p className="text-xs text-white/50 mb-2">提示词</p>
               <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap break-all">
@@ -280,25 +284,24 @@ export default function FullscreenViewer({ records, activeIndex, onClose, onDele
               </p>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3 mt-4">
               <button
                 onClick={handleCopy}
-                className="flex-1 py-2.5 rounded-lg text-sm font-medium transition"
+                className="flex-1 py-2.5 rounded-lg text-sm font-medium transition-base"
                 style={{ background: copied ? "#22c55e" : "rgba(255,255,255,0.15)", color: "#fff" }}
               >
                 {copied ? "已复制" : "复制提示词"}
               </button>
               <button
                 onClick={handleDownload}
-                className="flex-1 py-2.5 rounded-lg text-sm font-medium transition bg-white/15 text-white"
+                className="flex-1 py-2.5 rounded-lg text-sm font-medium transition-base bg-white/15 text-white"
               >
                 {isVideo ? "下载视频" : "下载图片"}
               </button>
               {onDelete && (
                 <button
                   onClick={() => { onDelete(record.id); onClose(); }}
-                  className="flex-1 py-2.5 rounded-lg text-sm font-medium transition bg-red-500/30 text-red-300"
+                  className="flex-1 py-2.5 rounded-lg text-sm font-medium transition-base bg-red-500/30 text-red-300"
                 >
                   删除
                 </button>
@@ -306,9 +309,12 @@ export default function FullscreenViewer({ records, activeIndex, onClose, onDele
             </div>
           </div>
         </div>
+        </>
       )}
 
       <style jsx>{`
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+        .scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
         @keyframes slideUp {
           from { transform: translateY(100%); }
           to { transform: translateY(0); }

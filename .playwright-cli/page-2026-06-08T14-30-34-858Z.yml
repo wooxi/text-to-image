@@ -1,0 +1,186 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "AI Creative Workbench 镜头导演台" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]: AI
+          - generic [ref=e8]:
+            - generic [ref=e9]: Creative Workbench
+            - generic [ref=e10]: 镜头导演台
+        - navigation [ref=e11]:
+          - link "创作台" [ref=e12] [cursor=pointer]:
+            - /url: /
+          - link "后台配置" [ref=e13] [cursor=pointer]:
+            - /url: /admin
+          - button "浅色界面" [ref=e14] [cursor=pointer]
+    - main [ref=e15]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]: Access
+          - paragraph [ref=e20]: "当前未登录，无法提交生成任务。登录后才能调用 `gpt-image` 或 Agnes 服务。"
+        - link "去登录" [ref=e21] [cursor=pointer]:
+          - /url: /admin/login
+      - generic [ref=e22]:
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - generic [ref=e27]: Guided Prompting
+            - heading "先定义主体和镜头，再决定模型如何生成这张图。" [level=1] [ref=e28]
+            - paragraph [ref=e29]: "关键词系统已经按主体、环境、穿着、姿势、镜头、风格重新拆分。输出比例和清晰度独立处理，避免语义词和参数词混杂。当前兼容 OpenAI `gpt-image-1`，也适配 Agnes 图像和视频参数约束。"
+          - generic [ref=e30]:
+            - generic [ref=e31]:
+              - generic [ref=e32]: Mode
+              - generic [ref=e33]: 关键词生图
+              - paragraph [ref=e34]: 按主体、环境、服装、镜头和风格逐层组织画面。
+            - generic [ref=e35]:
+              - generic [ref=e36]: Semantic
+              - generic [ref=e37]: "0"
+              - paragraph [ref=e38]: 已选画面语义词，建议控制在 4 到 8 个核心描述。
+            - generic [ref=e39]:
+              - generic [ref=e40]: Output
+              - generic [ref=e41]: 1024×1024
+              - paragraph [ref=e42]: 0 个输出参数已生效
+            - generic [ref=e43]:
+              - generic [ref=e44]: Queue
+              - generic [ref=e45]: "0"
+              - paragraph [ref=e46]: 进行中 0，失败 0，图库累计 0 项。
+        - generic [ref=e47]:
+          - generic [ref=e48]:
+            - generic [ref=e49]:
+              - generic [ref=e50]: Workflow
+              - heading "关键词流程" [level=2] [ref=e51]
+            - generic [ref=e52]: 0 组分类
+          - generic [ref=e53]:
+            - generic [ref=e55]:
+              - generic [ref=e56]: "1"
+              - generic [ref=e58]:
+                - generic [ref=e59]:
+                  - heading "主体" [level=3] [ref=e60]
+                  - paragraph [ref=e61]: 先定人物属性和体型气质
+                - generic [ref=e62]: 0 已选
+            - generic [ref=e64]:
+              - generic [ref=e65]: "2"
+              - generic [ref=e67]:
+                - generic [ref=e68]:
+                  - heading "环境" [level=3] [ref=e69]
+                  - paragraph [ref=e70]: 再定室内外、天气和时间
+                - generic [ref=e71]: 0 已选
+            - generic [ref=e73]:
+              - generic [ref=e74]: "3"
+              - generic [ref=e76]:
+                - generic [ref=e77]:
+                  - heading "穿着" [level=3] [ref=e78]
+                  - paragraph [ref=e79]: 补服装、配饰、材质
+                - generic [ref=e80]: 0 已选
+            - generic [ref=e82]:
+              - generic [ref=e83]: "4"
+              - generic [ref=e85]:
+                - generic [ref=e86]:
+                  - heading "姿势" [level=3] [ref=e87]
+                  - paragraph [ref=e88]: 描述动作、视线和身体表现
+                - generic [ref=e89]: 0 已选
+            - generic [ref=e91]:
+              - generic [ref=e92]: "5"
+              - generic [ref=e94]:
+                - generic [ref=e95]:
+                  - heading "镜头" [level=3] [ref=e96]
+                  - paragraph [ref=e97]: 选特写、全身、长焦、构图
+                - generic [ref=e98]: 0 已选
+            - generic [ref=e100]:
+              - generic [ref=e101]: "6"
+              - generic [ref=e103]:
+                - generic [ref=e104]:
+                  - heading "风格" [level=3] [ref=e105]
+                  - paragraph [ref=e106]: 收口到写实、动漫、电影感
+                - generic [ref=e107]: 0 已选
+      - generic [ref=e108]:
+        - complementary [ref=e109]:
+          - generic [ref=e110]:
+            - generic [ref=e111]: Generate Mode
+            - heading "创作入口" [level=2] [ref=e112]
+          - generic [ref=e113]:
+            - button "关键词生图 标签组合生成提示词" [ref=e114] [cursor=pointer]:
+              - generic [ref=e115]: 关键词生图
+              - paragraph [ref=e116]: 标签组合生成提示词
+            - button "手动生图 直接输入完整提示词" [ref=e117] [cursor=pointer]:
+              - generic [ref=e118]: 手动生图
+              - paragraph [ref=e119]: 直接输入完整提示词
+            - button "参考图生图 上传或粘贴参考图" [ref=e120] [cursor=pointer]:
+              - generic [ref=e121]: 参考图生图
+              - paragraph [ref=e122]: 上传或粘贴参考图
+            - button "视频生成 文生视频/图生视频/关键帧" [ref=e123] [cursor=pointer]:
+              - generic [ref=e124]: 视频生成
+              - paragraph [ref=e125]: 文生视频/图生视频/关键帧
+          - generic [ref=e126]:
+            - generic [ref=e127]:
+              - generic [ref=e128]:
+                - generic [ref=e129]: Current Output
+                - generic [ref=e130]: 1024×1024
+              - generic [ref=e131]: 0 词
+            - paragraph [ref=e132]: 比例和清晰度词只作为参数提交，不混入自然语言提示词。
+        - generic [ref=e133]:
+          - generic [ref=e134]:
+            - generic [ref=e135]:
+              - generic [ref=e136]:
+                - generic [ref=e137]: Keyword System
+                - heading "结构化选词" [level=2] [ref=e138]
+                - paragraph [ref=e139]: 按创作顺序完成画面定义，避免旧版标签体系杂乱堆叠。
+              - generic [ref=e140]:
+                - generic [ref=e141]: Selected
+                - generic [ref=e142]: "0"
+                - generic [ref=e143]: 语义词 / 0 总计
+            - generic [ref=e145]:
+              - generic [ref=e146]:
+                - textbox "搜索关键词，例如 逆光、85mm、电影感" [ref=e148]
+                - generic [ref=e149]:
+                  - generic [ref=e150]: 0 个分类
+                  - generic [ref=e152]: 0 个已选
+                  - button "仅看已选" [ref=e153] [cursor=pointer]
+              - generic [ref=e154]: 没有匹配到关键词，换个词试试。
+          - generic [ref=e155]:
+            - generic [ref=e156]:
+              - generic [ref=e157]:
+                - generic [ref=e158]: Prompt Console
+                - heading "提示词控制台" [level=2] [ref=e159]
+                - paragraph [ref=e160]: 先让系统按结构化关键词生成底稿，再手动微调语气、镜头和细节。
+              - generic [ref=e161]:
+                - generic [ref=e162]: Characters
+                - generic [ref=e163]: "0"
+                - generic [ref=e164]: 当前文本长度
+            - generic [ref=e165]:
+              - textbox "输入完整提示词，或先从关键词自动生成..." [ref=e166]
+              - generic [ref=e167]:
+                - generic [ref=e168]: 0 字符
+                - generic [ref=e169]: 默认 1024×1024
+                - generic [ref=e170]: 未登录，仅可浏览
+              - generic [ref=e171]:
+                - button "生成提示词底稿" [disabled] [ref=e172]
+                - button "AI 润色" [disabled] [ref=e173]
+                - button "请先登录" [disabled] [ref=e174]
+          - generic [ref=e175]:
+            - generic [ref=e176]:
+              - generic [ref=e177]:
+                - generic [ref=e178]: Gallery
+                - heading "生成结果" [level=2] [ref=e179]
+                - paragraph [ref=e180]: 桌面端支持更宽的瀑布流预览，便于筛图和对比。
+              - generic [ref=e181]: 0 个作品
+            - generic [ref=e183]:
+              - paragraph [ref=e184]: 暂时还没有生成结果
+              - paragraph [ref=e185]: 从左侧先选主体、环境和镜头，再生成第一批样张。
+        - complementary [ref=e186]:
+          - generic [ref=e187]:
+            - generic [ref=e188]: Task Queue
+            - heading "任务队列" [level=2] [ref=e189]
+            - paragraph [ref=e190]: 正在提交和失败的任务会在这里跟踪。
+          - generic [ref=e192]:
+            - generic [ref=e193]:
+              - generic [ref=e194]: "0"
+              - generic [ref=e195]: 进行中
+            - generic [ref=e196]:
+              - generic [ref=e197]: "0"
+              - generic [ref=e198]: 失败
+            - generic [ref=e199]:
+              - generic [ref=e200]: "0"
+              - generic [ref=e201]: 成品
+          - generic [ref=e202]: 当前没有排队任务。
+  - alert [ref=e203]

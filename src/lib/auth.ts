@@ -1,9 +1,8 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const secret = new TextEncoder().encode(
-  process.env.JWT_SECRET || "text-to-image-jwt-secret-change-in-production"
-);
+const jwtSecret = process.env.JWT_SECRET || "text-to-image-jwt-secret-change-in-production";
+const secret = new TextEncoder().encode(jwtSecret);
 
 export async function createToken(userId: number, username: string): Promise<string> {
   return new SignJWT({ userId, username })

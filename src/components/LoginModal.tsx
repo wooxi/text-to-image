@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 
-export default function LoginPage() {
+interface Props {
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+export default function LoginModal({ onClose, onSuccess }: Props) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -12,7 +17,6 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -21,40 +25,46 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (data.success) {
-        sessionStorage.setItem("admin_user", data.data.username);
-        window.location.href = "/admin";
+        onSuccess();
       } else {
         setError(data.error || "登录失败");
-        setLoading(false);
       }
     } catch {
       setError("网络错误");
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
-      <div className="panel-soft rounded-lg p-8 w-full max-w-sm">
-        <h1 className="text-xl font-bold text-app-text text-center mb-6">后台登录</h1>
-        <form onSubmit={handleLogin} className="space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60" />
+      <div
+        className="relative panel-soft rounded-lg p-6 w-full max-w-sm mx-4 animate-fade-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-semibold text-app-text">登录</h2>
+          <button onClick={onClose} className="text-app-text3 hover:text-app-text transition-base text-lg">×</button>
+        </div>
+
+        <form onSubmit={handleLogin} className="space-y-3">
           <div>
-            <label className="block text-xs text-app-text3 mb-1">用户名</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3 py-2 rounded-md border border-app-border/60 bg-[var(--bg-tertiary)] text-app-text text-sm focus:border-[var(--accent)] focus:outline-none"
+              className="w-full rounded-md border border-app-border/60 bg-[var(--bg-tertiary)] px-3 py-2 text-sm text-app-text focus:border-[var(--accent)] focus:outline-none"
               placeholder="用户名"
+              autoFocus
             />
           </div>
           <div>
-            <label className="block text-xs text-app-text3 mb-1">密码</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 rounded-md border border-app-border/60 bg-[var(--bg-tertiary)] text-app-text text-sm focus:border-[var(--accent)] focus:outline-none"
+              className="w-full rounded-md border border-app-border/60 bg-[var(--bg-tertiary)] px-3 py-2 text-sm text-app-text focus:border-[var(--accent)] focus:outline-none"
               placeholder="密码"
             />
           </div>
@@ -62,7 +72,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 rounded-md text-sm font-semibold text-white transition-base"
+            className="w-full rounded-md py-2 text-sm font-semibold text-white transition-base"
             style={{ background: loading ? "var(--bg-tertiary)" : "var(--accent)" }}
           >
             {loading ? "登录中..." : "登录"}

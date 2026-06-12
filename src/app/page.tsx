@@ -7,6 +7,7 @@ import KeywordSelector from "@/components/KeywordSelector";
 import ImageUploader from "@/components/ImageUploader";
 import MasonryGallery from "@/components/MasonryGallery";
 import MobileHome from "@/components/MobileHome";
+import LoginModal from "@/components/LoginModal";
 import { KeywordFacet, KeywordGroup, ImageRecord } from "@/types";
 
 const SIZE_MAP: [string, string][] = [
@@ -102,6 +103,7 @@ export default function HomePage() {
   const [videoFrames, setVideoFrames] = useState(121);
   const [videoFps, setVideoFps] = useState(24);
   const [liveTasks, setLiveTasks] = useState<TaskRecord[]>([]);
+  const [showLogin, setShowLogin] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const actionLock = useRef(false);
 
@@ -209,7 +211,7 @@ export default function HomePage() {
       return;
     }
     if (!loggedIn) {
-      alert("请先登录");
+      setShowLogin(true);
       return;
     }
     setLoading(true);
@@ -250,7 +252,7 @@ export default function HomePage() {
   const handleGenerate = async () => {
     if (actionLock.current) return;
     if (!loggedIn) {
-      alert("请先登录");
+      setShowLogin(true);
       return;
     }
 
@@ -431,9 +433,9 @@ export default function HomePage() {
           <div className="shrink-0 border-b border-app-border/40 bg-[var(--accent-light)]/30">
             <div className="flex items-center justify-between gap-3 px-5 py-2">
               <span className="text-xs text-app-text2">未登录 — 无法提交生成任务</span>
-              <Link href="/admin/login" className="rounded-md bg-[var(--accent)] px-4 py-1.5 text-xs font-medium text-white transition-base hover:bg-[var(--accent-hover)]">
-                去登录
-              </Link>
+              <button onClick={() => setShowLogin(true)} className="rounded-md bg-[var(--accent)] px-4 py-1.5 text-xs font-medium text-white transition-base hover:bg-[var(--accent-hover)]">
+                登录
+              </button>
             </div>
           </div>
         )}
@@ -744,6 +746,20 @@ export default function HomePage() {
           </aside>
 
         </div>
+
+        {/* Login modal */}
+        {showLogin && (
+          <LoginModal
+            onClose={() => setShowLogin(false)}
+            onSuccess={() => {
+              setShowLogin(false);
+              setLoggedIn(true);
+              fetchHistory();
+              fetchLiveTasks();
+              startPolling();
+            }}
+          />
+        )}
       </div>
 
       {/* ═══════════ MOBILE ═══════════ */}
@@ -784,6 +800,12 @@ export default function HomePage() {
           onVideoFpsChange={setVideoFps}
           outputSize={outputSize}
           videoDuration={videoDuration}
+          onLoginSuccess={() => {
+            setLoggedIn(true);
+            fetchHistory();
+            fetchLiveTasks();
+            startPolling();
+          }}
         />
       </div>
     </>

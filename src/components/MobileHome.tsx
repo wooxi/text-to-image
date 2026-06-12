@@ -6,6 +6,7 @@ import KeywordSelector from "./KeywordSelector";
 import ImageUploader from "./ImageUploader";
 import MasonryGallery from "./MasonryGallery";
 import FullscreenViewer from "./FullscreenViewer";
+import LoginModal from "./LoginModal";
 import { useTheme } from "./ThemeProvider";
 
 interface TaskRecord {
@@ -50,6 +51,7 @@ interface Props {
   onVideoFpsChange: (v: number) => void;
   outputSize: string | null;
   videoDuration: string;
+  onLoginSuccess?: () => void;
 }
 
 export default function MobileHome(props: Props) {
@@ -64,11 +66,12 @@ export default function MobileHome(props: Props) {
     videoMode, onVideoModeChange,
     videoWidth, onVideoWidthChange, videoHeight, onVideoHeightChange,
     videoFrames, onVideoFramesChange, videoFps, onVideoFpsChange,
-    outputSize, videoDuration,
+    outputSize, videoDuration, onLoginSuccess,
   } = props;
 
   const [tab, setTab] = useState<"generate" | "gallery" | "tasks" | "settings">("generate");
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const [showLogin, setShowLogin] = useState(false);
   const { theme, toggle: toggleTheme } = useTheme();
 
   const activeTasks = liveTasks.filter(t => t.status === "pending" || t.status === "processing");
@@ -83,18 +86,18 @@ export default function MobileHome(props: Props) {
 
   const renderGenerateTab = () => (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+      {/* Top: mode selector + login */}
+      <div className="shrink-0 px-4 pt-3 pb-2 space-y-3 border-b border-[var(--border)]/30">
         {!loggedIn && (
-          <a
-            href="/admin/login"
-            className="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition"
+          <button
+            onClick={() => setShowLogin(true)}
+            className="flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-medium transition-base"
             style={{ background: "var(--accent-light)", color: "var(--accent)" }}
           >
             <span>请先登录后才能生成</span>
             <span className="text-xs opacity-70">去登录 →</span>
-          </a>
+          </button>
         )}
-        {/* Mode selector */}
         <div className="grid grid-cols-3 gap-1.5 bg-[var(--bg-tertiary)] rounded-xl p-1">
           {(["keywords", "img2img", "video"] as const).map((m) => (
             <button
@@ -110,8 +113,10 @@ export default function MobileHome(props: Props) {
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Keyword selector for keywords/img2img modes */}
+      {/* Middle: scrollable keyword/video area */}
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 overscroll-contain">
         {(mode === "keywords" || mode === "img2img") && (
           <>
             {mode === "img2img" && (
@@ -120,13 +125,10 @@ export default function MobileHome(props: Props) {
                 <ImageUploader images={refImages} onChange={onRefImagesChange} />
               </div>
             )}
-            <div>
-              <KeywordSelector groups={groups} selected={selected} onToggle={onToggleKeyword} onClear={onClearKeywords} />
-            </div>
+            <KeywordSelector groups={groups} selected={selected} onToggle={onToggleKeyword} onClear={onClearKeywords} />
           </>
         )}
 
-        {/* Video config */}
         {mode === "video" && (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
@@ -152,37 +154,34 @@ export default function MobileHome(props: Props) {
             </div>
           </div>
         )}
-
-        {/* Prompt textarea */}
-        <div>
-          <textarea
-            value={prompt}
-            onChange={e => onPromptChange(e.target.value)}
-            rows={mode === "video" ? 6 : 5}
-            className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none focus:outline-none focus:border-[var(--accent)]"
-            placeholder={mode === "video" ? "描述画面、主体动作、镜头运动..." : mode === "img2img" ? "输入要保留和修改的内容..." : "先选主体和环境，再生成提示词或直接手改..."}
-          />
-          <p className="text-[10px] text-[var(--text-muted)] mt-1 text-right">{prompt.length} 字符</p>
-        </div>
       </div>
 
-      {/* Bottom buttons */}
-      <div className="px-4 py-3 border-t border-[var(--border)] bg-[var(--bg-secondary)] space-y-2">
-        {mode === "keywords" && (
-          <button
-            onClick={onGeneratePrompt}
-            disabled={loading || selected.length === 0 || !loggedIn}
-            className="w-full py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-40"
-            style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)" }}
-          >
-            {loading && statusText === "正在生成提示词..." ? "生成中..." : "生成提示词"}
-          </button>
-        )}
-        <div className="flex gap-2">
+      {/* Bottom: textarea + action buttons — always visible */}
+      <div className="shrink-0 px-4 pt-2 pb-3 border-t border-[var(--border)] bg-[var(--bg-secondary)] space-y-1.5" style={{ boxShadow: "0 -1px 8px rgba(0,0,0,0.3)" }}>
+        <textarea
+          value={prompt}
+          onChange={e => onPromptChange(e.target.value)}
+          rows={1}
+          className="w-full rounded-md border border-[var(--border)] bg-[var(--bg-tertiary)] px-3 py-1.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none focus:outline-none focus:border-[var(--accent)]"
+          placeholder={mode === "video" ? "描述动作、镜头..." : mode === "img2img" ? "要保留和修改的内容..." : "先选词，或直接写提示词..."}
+        />
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-[var(--text-muted)] tabular-nums shrink-0">{prompt.length}c</span>
+          {mode === "keywords" && (
+            <button
+              onClick={onGeneratePrompt}
+              disabled={loading || selected.length === 0 || !loggedIn}
+              className="px-2.5 py-1.5 rounded-md text-xs font-medium transition disabled:opacity-40 shrink-0"
+              style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)" }}
+            >
+              {loading && statusText === "正在生成提示词..." ? "…" : "生词"}
+            </button>
+          )}
+          <div className="flex-1" />
           <button
             onClick={onPolish}
             disabled={loading || !prompt.trim()}
-            className="flex-1 py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-40"
+            className="px-3 py-1.5 rounded-md text-xs font-medium transition disabled:opacity-40"
             style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)" }}
           >
             润色
@@ -190,13 +189,23 @@ export default function MobileHome(props: Props) {
           <button
             onClick={onGenerate}
             disabled={loading || !loggedIn || (!prompt.trim() && mode !== "img2img")}
-            className="flex-[2] py-2.5 rounded-xl text-sm font-semibold text-white transition disabled:opacity-40"
+            className="px-4 py-1.5 rounded-md text-xs font-semibold text-white transition disabled:opacity-40"
             style={{ background: loading || !loggedIn ? "var(--bg-tertiary)" : "var(--accent)" }}
           >
-            {!loggedIn ? "请先登录" : loading && statusText !== "AI 润色中..." ? statusText : mode === "video" ? "生成视频" : "生成图片"}
+            {!loggedIn ? "登录" : loading && statusText !== "AI 润色中..." ? statusText : mode === "video" ? "生成视频" : "生成图片"}
           </button>
         </div>
       </div>
+
+      {showLogin && (
+        <LoginModal
+          onClose={() => setShowLogin(false)}
+          onSuccess={() => {
+            setShowLogin(false);
+            onLoginSuccess?.();
+          }}
+        />
+      )}
     </div>
   );
 
@@ -306,9 +315,12 @@ export default function MobileHome(props: Props) {
   );
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-[var(--bg-primary)] text-[var(--text-primary)]">
-      {/* Header */}
-      <div className="flex-shrink-0 px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-secondary)] flex items-center justify-between" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
+    <div className="fixed inset-0 flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]" style={{ overscrollBehavior: "contain" }}>
+      {/* Header — fixed */}
+      <div
+        className="shrink-0 px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-secondary)]/95 backdrop-blur-xl flex items-center justify-between"
+        style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}
+      >
         <h1 className="text-base font-bold">AI 文生图</h1>
         <div className="flex gap-2 text-[10px] text-[var(--text-muted)]">
           <span>{records.length} 作品</span>
@@ -325,8 +337,8 @@ export default function MobileHome(props: Props) {
         {tab === "settings" && renderSettingsTab()}
       </div>
 
-      {/* Bottom tabs */}
-      <div className="flex-shrink-0 flex border-t border-[var(--border)] bg-[var(--bg-secondary)] safe-area-pb">
+      {/* Bottom tabs — fixed to viewport */}
+      <div className="shrink-0 flex border-t border-[var(--border)] bg-[var(--bg-secondary)]" style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))', boxShadow: '0 -1px 8px rgba(0,0,0,0.25)' }}>
         {tabs.map((t) => (
           <button
             key={t.key}
