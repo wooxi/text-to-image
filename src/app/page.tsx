@@ -428,43 +428,66 @@ export default function HomePage() {
       <div className="hidden lg:flex lg:flex-col lg:h-screen lg:overflow-hidden">
         <Header />
 
-        {/* Auth banner */}
+        {/* ═══ Welcome Hero — logged-out ═══ */}
         {!loggedIn && (
-          <div className="shrink-0 border-b border-app-border/40 bg-[var(--accent-light)]/30">
-            <div className="flex items-center justify-between gap-3 px-5 py-2">
-              <span className="text-xs text-app-text2">未登录 — 无法提交生成任务</span>
-              <button onClick={() => setShowLogin(true)} className="rounded-md bg-[var(--accent)] px-4 py-1.5 text-xs font-medium text-white transition-base hover:bg-[var(--accent-hover)]">
-                登录
-              </button>
+          <div className="shrink-0 relative overflow-hidden border-b border-app-border/40" style={{"background": "linear-gradient(135deg, rgba(217,107,43,0.08) 0%, rgba(16,22,24,1) 40%, rgba(136,192,168,0.05) 70%, rgba(16,22,24,1) 100%)"}}>
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full opacity-[0.06]" style={{"background": "radial-gradient(circle, var(--accent) 0%, transparent 70%)"}} />
+              <div className="absolute -bottom-16 right-[20%] w-48 h-48 rounded-full opacity-[0.04]" style={{"background": "radial-gradient(circle, var(--highlight) 0%, transparent 70%)"}} />
+              <div className="absolute top-0 right-0 w-96 h-full opacity-[0.03]" style={{"background": "linear-gradient(90deg, transparent 0%, var(--accent) 30%, transparent 100%)"}} />
+            </div>
+            <div className="relative px-5 py-6 sm:px-8 sm:py-8">
+              <div className="max-w-3xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-[0.2em]" style={{"background": "var(--accent-light)", "color": "var(--accent)"}}>✦ AI 创意工坊</span>
+                  <span className="text-[10px] uppercase tracking-[0.15em] text-app-text3">Text to Image Studio</span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2" style={{"color": "var(--text-primary)"}}>文生图<span style={{"color": "var(--accent)"}}>工作室</span></h1>
+                <p className="text-sm sm:text-base leading-relaxed max-w-lg mb-5" style={{"color": "var(--text-secondary)"}}>选择关键词，让 AI 为你生成精美画面。支持关键词导演、参考图编辑和视频生成三种创作模式。</p>
+                <div className="flex flex-wrap items-center gap-3">
+                  {tabs.map((tab) => (
+                    <button key={tab.key} type="button" onClick={() => setMode(tab.key)}
+                      className="flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+                      style={{"background": tab.key === mode ? "var(--accent-light)" : "rgba(255,255,255,0.03)", "borderColor": tab.key === mode ? "var(--accent)" : "var(--border)", "color": tab.key === mode ? "var(--accent)" : "var(--text-secondary)", "boxShadow": tab.key === mode ? "0 0 20px var(--accent-glow)" : "none"}}>
+                      <span className="text-base">{{"keywords": "🎨", "img2img": "🖼️", "video": "🎬"}[tab.key as "keywords" | "img2img" | "video"]}</span>
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                  <button onClick={() => setShowLogin(true)}
+                    className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.98]"
+                    style={{"background": "linear-gradient(135deg, var(--accent), var(--accent-hover))", "boxShadow": "0 4px 20px var(--accent-glow)"}}>
+                    <span>🔐</span><span>登录开始创作</span><span className="text-xs opacity-80 ml-1">→</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        )}
-
-        {/* Stats bar */}
-        <div className="shrink-0 flex items-center gap-5 border-b border-app-border/40 bg-[var(--bg-secondary)] px-5 py-1.5">
-          <span className="text-[11px] uppercase tracking-[0.18em] text-app-text3 shrink-0">{MODE_META[mode].eyebrow}</span>
-          <span className="text-xs text-app-text2 truncate font-medium">{currentMode?.label ?? "关键词导演"}</span>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="text-[11px] text-app-text3 tabular-nums">
-              词 <span className="text-app-text2 font-mono">{groups.length === 0 ? "…" : semanticSelected.length}</span>
-            </span>
-            <span className="text-app-border/40">|</span>
-            <span className="text-[11px] text-app-text3 tabular-nums">
-              输出 <span className="text-app-text2 font-mono">{mode === "video" ? `${videoWidth}×${videoHeight}` : outputSize || "1024"}</span>
-            </span>
-            <span className="text-app-border/40">|</span>
-            <span className="text-[11px] text-app-text3 tabular-nums">
-              队列 <span className="text-app-text2 font-mono">{activeTasks.length}</span>
-              {failedTasks.length > 0 && <span className="text-[var(--danger)] font-mono">/{failedTasks.length}</span>}
-            </span>
-            <span className="text-app-border/40">|</span>
-            <span className="text-[11px] text-app-text3 tabular-nums">
-              成品 <span className="text-app-text2 font-mono">{records.length}</span>
-            </span>
+        )}{/* Stats bar */}
+        <div className="shrink-0 flex items-center gap-3 border-b border-app-border/40 bg-[var(--bg-secondary)] px-5 py-2">
+          <span className="text-[10px] uppercase tracking-[0.2em] text-app-text3 shrink-0 font-semibold">{MODE_META[mode].eyebrow}</span>
+          <span className="h-4 w-px bg-app-border/30 shrink-0" />
+          <span className="text-xs text-app-text2 font-medium">{currentMode?.label ?? "关键词导演"}</span>
+          <div className="ml-auto flex items-center gap-2.5">
+            <div className="flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: semanticSelected.length > 0 ? "var(--accent-light)" : "var(--bg-tertiary)" }}>
+              <span className="text-[10px] text-app-text3">词</span>
+              <span className="text-[11px] font-mono font-semibold" style={{ color: semanticSelected.length > 0 ? "var(--accent)" : "var(--text-secondary)" }}>{groups.length === 0 ? "\u2026" : semanticSelected.length}</span>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: "var(--bg-tertiary)" }}>
+              <span className="text-[10px] text-app-text3">输出</span>
+              <span className="text-[11px] font-mono font-medium text-app-text2">{mode === "video" ? `${videoWidth}\u00d7${videoHeight}` : outputSize || "1024"}</span>
+            </div>
+            <span className="h-4 w-px bg-app-border/30 shrink-0" />
+            <div className="flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: activeTasks.length > 0 ? "var(--accent-light)" : "var(--bg-tertiary)" }}>
+              <span className="text-[10px] text-app-text3">队列</span>
+              <span className="text-[11px] font-mono font-semibold" style={{ color: activeTasks.length > 0 ? "var(--accent)" : "var(--text-secondary)" }}>{activeTasks.length}</span>
+              {failedTasks.length > 0 && <span className="text-[11px] font-mono font-semibold text-[var(--danger)]">/{failedTasks.length}</span>}
+            </div>
+            <div className="flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: records.length > 0 ? "rgba(34,197,94,0.08)" : "var(--bg-tertiary)" }}>
+              <span className="text-[10px] text-app-text3">成品</span>
+              <span className="text-[11px] font-mono font-semibold" style={{ color: records.length > 0 ? "var(--success)" : "var(--text-secondary)" }}>{records.length}</span>
+            </div>
           </div>
-        </div>
-
-        {/* Three-column main area */}
+        </div>{/* Three-column main area */}
         <div className="flex-1 flex min-h-0 overflow-hidden">
 
           {/* ── LEFT SIDEBAR (17%) ── */}
@@ -484,7 +507,8 @@ export default function HomePage() {
                         borderLeft: active ? "2px solid var(--accent)" : "2px solid transparent",
                       }}
                     >
-                      <div className="text-sm font-medium" style={{ color: active ? "var(--accent)" : "var(--text-secondary)" }}>
+                      <div className="flex items-center text-sm font-medium" style={{ color: active ? "var(--accent)" : "var(--text-secondary)" }}>
+                        <span className="mr-2 text-base">{tab.key === "keywords" ? "🎨" : tab.key === "img2img" ? "🖼️" : "🎬"}</span>
                         {tab.label}
                       </div>
                       <div className="mt-1 text-[11px] text-app-text3 leading-relaxed">{tab.desc}</div>
@@ -609,7 +633,7 @@ export default function HomePage() {
 
                 {/* Gallery */}
                 <div className="pt-3 border-t border-app-border/30">
-                  <MasonryGallery records={records} liveTasks={[]} onDelete={handleDeleteHistory} onDeleteTask={handleDeleteTask} />
+                  <MasonryGallery records={records} liveTasks={liveTasks} onDelete={handleDeleteHistory} onDeleteTask={handleDeleteTask} loading={loading} />
                 </div>
               </div>
             </div>
@@ -623,9 +647,11 @@ export default function HomePage() {
                   rows={3}
                   className="w-full resize-none rounded-md border border-app-border/60 bg-[var(--bg-tertiary)] px-4 py-3 text-sm leading-relaxed text-app-text placeholder:text-app-text3 focus:border-[var(--accent)] focus:outline-none"
                   placeholder={
-                    mode === "video" ? "描述画面主体动作、镜头运动、光线变化..." :
-                    mode === "img2img" ? "描述保留什么、改动什么..." :
-                    "先选关键词，点「生成提示词」获取底稿，或直接手写后点「AI 润色」..."
+                    mode === "video"
+                      ? "🎬 描述画面主体、动作、镜头运动和光线变化..."
+                      : mode === "img2img"
+                      ? "🖼️ 描述保留什么、改动什么，如：把外套改成红色..."
+                      : "✨ 选好关键词后点「生成提示词」获取底稿，或直接手写描述..."
                   }
                 />
 
@@ -659,12 +685,12 @@ export default function HomePage() {
                       className="rounded-md bg-[var(--accent)] px-5 py-2 text-xs font-semibold text-white transition-base hover:bg-[var(--accent-hover)] hover:shadow-[0_0_12px_var(--accent-glow)] disabled:bg-[var(--bg-tertiary)] disabled:text-app-text3 disabled:shadow-none disabled:cursor-not-allowed"
                     >
                       {!loggedIn
-                        ? "请先登录"
+                        ? "🔐 请先登录"
                         : loading && statusText !== "AI 润色中..." && statusText !== "正在生成提示词..."
                           ? statusText
                           : mode === "video"
-                            ? "提交视频"
-                            : "提交图片"}
+                            ? "🎬 提交视频"
+                            : "✨ 提交生成"}
                     </button>
                   </div>
                 </div>
@@ -694,7 +720,11 @@ export default function HomePage() {
 
               {queueTasks.length === 0 ? (
                 <div className="py-10 text-center">
-                  <p className="text-xs text-app-text3">无排队任务</p>
+                  <div className="flex flex-col items-center gap-2">
+                  <span className="text-2xl opacity-30">📭</span>
+                  <p className="text-xs text-app-text3">暂无排队任务</p>
+                  <p className="text-[10px] text-app-text3/60">选择关键词后提交生成</p>
+                </div>
                 </div>
               ) : (
                 <div className="space-y-2">

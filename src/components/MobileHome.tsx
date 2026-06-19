@@ -78,8 +78,8 @@ export default function MobileHome(props: Props) {
   const failedTasks = liveTasks.filter(t => t.status === "failed");
 
   const tabs = [
-    { key: "generate" as const, label: "生图", icon: "＋" as const, badge: 0 },
-    { key: "gallery" as const, label: "图库", icon: "▦" as const, badge: 0 },
+    { key: "generate" as const, label: "创作", icon: "✨" as const, badge: 0 },
+    { key: "gallery" as const, label: "图库", icon: "🖼️" as const, badge: 0 },
     { key: "tasks" as const, label: "任务", icon: "📋" as const, badge: liveTasks.length },
     { key: "settings" as const, label: "配置", icon: "⚙" as const, badge: 0 },
   ];
@@ -89,14 +89,22 @@ export default function MobileHome(props: Props) {
       {/* Top: mode selector + login */}
       <div className="shrink-0 px-4 pt-3 pb-2 space-y-3 border-b border-[var(--border)]/30">
         {!loggedIn && (
-          <button
-            onClick={() => setShowLogin(true)}
-            className="flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-medium transition-base"
-            style={{ background: "var(--accent-light)", color: "var(--accent)" }}
-          >
-            <span>请先登录后才能生成</span>
-            <span className="text-xs opacity-70">去登录 →</span>
-          </button>
+          <div className="relative overflow-hidden rounded-2xl mb-1" style={{ background: "linear-gradient(135deg, rgba(217,107,43,0.12) 0%, rgba(16,22,24,0.95) 50%, rgba(136,192,168,0.06) 100%)", border: "1px solid rgba(217,107,43,0.15)" }}>
+            <div className="px-4 py-5">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.15em]" style={{ background: "var(--accent-light)", color: "var(--accent)" }}>✦ AI 创意工坊</span>
+              </div>
+              <h2 className="text-lg font-bold mb-1" style={{ color: "var(--text-primary)" }}>文生图<span style={{ color: "var(--accent)" }}>工作室</span></h2>
+              <p className="text-xs mb-4" style={{ color: "var(--text-secondary)" }}>关键词导演 · 参考图编辑 · 视频生成</p>
+              <button
+                onClick={() => setShowLogin(true)}
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all active:scale-[0.98]"
+                style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-hover))", boxShadow: "0 4px 16px var(--accent-glow)" }}
+              >
+                <span>🔐</span><span>登录开始创作</span><span className="text-xs opacity-80">→</span>
+              </button>
+            </div>
+          </div>
         )}
         <div className="grid grid-cols-3 gap-1.5 bg-[var(--bg-tertiary)] rounded-xl p-1">
           {(["keywords", "img2img", "video"] as const).map((m) => (
@@ -109,7 +117,7 @@ export default function MobileHome(props: Props) {
                 color: mode === m ? "#fff" : "var(--text-secondary)",
               }}
             >
-              {{keywords: "关键词", img2img: "参考图", video: "视频"}[m]}
+              {{keywords: "🎨 关键词", img2img: "🖼️ 参考图", video: "🎬 视频"}[m]}
             </button>
           ))}
         </div>
@@ -214,7 +222,7 @@ export default function MobileHome(props: Props) {
       <div className="flex-1 overflow-y-auto px-3 py-3">
         <MasonryGallery
           records={records}
-          liveTasks={[]}
+          liveTasks={liveTasks} loading={loading}
           onDelete={onDeleteHistory}
           onDeleteTask={onDeleteTask}
           onImageClick={(record) => {

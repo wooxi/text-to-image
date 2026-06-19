@@ -12,6 +12,26 @@ function getConfig(key: string): string {
   return row?.value || "";
 }
 
+function parseContentPolicyError(errorData: unknown): string {
+  try {
+    const err = errorData as Record<string, unknown>;
+    const msg = String(err?.message || err?.error || "");
+    
+    if (msg.includes("内容政策") || msg.includes("content_policy") || msg.includes("性化") || msg.includes("物化") || msg.includes("不适合生成")) {
+      return "内容安全拦截：提示词中可能包含不当描述，请修改关键词后重试。可以尝试更换角度描述（如从时尚摄影、商业展示角度），减少对身体特定部位的过度特写。";
+    }
+    if (msg.includes("足部") || msg.includes("丝袜") || msg.includes("恋物")) {
+      return "内容安全拦截：请避免对身体部位的过度特写和性感化描述。如需展示服饰/搭配，建议使用全身或半身构图。";
+    }
+    if (msg.includes("安全") || msg.includes("违规") || msg.includes("policy")) {
+      return "内容安全拦截：提示词未通过安全审核，请调整关键词。建议使用更中性、专业的描述词汇。";
+    }
+    return "生图失败：" + msg.substring(0, 200);
+  } catch {
+    return "生图失败：未知错误";
+  }
+}
+
 async function downloadImage(url: string, savePath: string): Promise<void> {
   const fullUrl = url.startsWith("http") ? url : `https://${url}`;
   const response = await fetch(fullUrl);
@@ -39,7 +59,8 @@ export async function POST(request: Request) {
 
     const url = endpoint.replace(/\/+$/, "") + "/images/generations";
 
-    const qualitySuffix = ", perfect anatomy, anatomically correct, each body part clearly separated and distinct, no merged limbs, no hands touching legs, no extra appendages, correct number of fingers and toes, natural body proportions, no deformities, professional photography, highly detailed, masterpiece";
+    // Enhanced quality suffix with safety awareness
+    const qualitySuffix = ", professional photography, highly detailed, masterpiece, sharp focus, elegant composition, natural lighting, anatomically correct, clean aesthetic, commercial photography style";
     const finalPrompt = prompt + qualitySuffix;
 
     const response = await fetch(url, {
@@ -61,14 +82,24 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       const errText = await response.text();
-      return NextResponse.json({ success: false, error: `生图 API 错误: ${errText}` }, { status: 500 });
+      let errData: unknown;
+      try { errData = JSON.parse(errText); } catch { errData = { error: { message: errText } }; }
+      const userMsg = parseContentPolicyError(errData);
+      return NextResponse.json({ success: false, error: userMsg }, { status: 500 });
     }
 
     const data = await response.json();
+    
+    // Check for error in 200 response (some APIs do this)
+    if (data.error) {
+      const userMsg = parseContentPolicyError(data);
+      return NextResponse.json({ success: false, error: userMsg }, { status: 500 });
+    }
+
     const imageData = data.data?.[0];
 
     if (!imageData) {
-      return NextResponse.json({ success: false, error: "生图返回数据为空" }, { status: 500 });
+      return NextResponse.json({ success: false, error: "生图返回数据为空，API 可能返回了异常响应" }, { status: 500 });
     }
 
     const publicDir = path.join(process.cwd(), "public", "images", "generated");
@@ -85,7 +116,7 @@ export async function POST(request: Request) {
     } else if (imageData.url) {
       await downloadImage(imageData.url, savePath);
     } else {
-      return NextResponse.json({ success: false, error: "生图返回格式不支持" }, { status: 500 });
+      return NextResponse.json({ success: false, error: "生图返回格式不支持，请检查 API 配置" }, { status: 500 });
     }
 
     const imagePath = `/images/generated/${filename}`;
@@ -102,6 +133,6 @@ export async function POST(request: Request) {
     if ((e as Error).message === "Unauthorized") {
       return NextResponse.json({ success: false, error: "未登录" }, { status: 401 });
     }
-    return NextResponse.json({ success: false, error: `生成图片失败: ${(e as Error).message}` }, { status: 500 });
+    return NextResponse.json({ success: false, error: `生成失败: ${(e as Error).message}` }, { status: 500 });
   }
 }
